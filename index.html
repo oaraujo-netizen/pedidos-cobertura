@@ -570,7 +570,7 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
       <button class="btn bg" onclick="cpEmail('ec-prev')">Copiar texto</button>
       <button class="btn bp" id="ec-send-btn" onclick="enviarEmailCineg()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        Confirmar e abrir email
+        Enviar email
       </button>
     </div>
   </div>
@@ -778,6 +778,63 @@ function openMailto(url){
   setTimeout(()=>document.body.removeChild(a),200);
 }
 
+// ══════════════════════════════════════════════════
+// GMAIL API — envia direto pelo Gmail do usuário logado
+// ══════════════════════════════════════════════════
+const GMAIL_CLIENT_ID='699539167023-8tqk6tfge8uf3ejd6cmiudql27bctd2a.apps.googleusercontent.com';
+let gmailTokenClient=null;
+let gmailToken=null;
+let pendingEmailFn=null;
+
+function initGmailTokenClient(){
+  if(typeof google==='undefined'||!google.accounts?.oauth2) return;
+  gmailTokenClient=google.accounts.oauth2.initTokenClient({
+    client_id: GMAIL_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/gmail.send',
+    callback:(resp)=>{
+      if(resp.error){ toast('Erro ao autorizar Gmail: '+resp.error,'w'); return; }
+      gmailToken=resp.access_token;
+      if(pendingEmailFn){ pendingEmailFn(); pendingEmailFn=null; }
+    }
+  });
+}
+
+function withGmailToken(fn){
+  if(gmailToken){ fn(); return; }
+  pendingEmailFn=fn;
+  if(!gmailTokenClient) initGmailTokenClient();
+  if(gmailTokenClient) gmailTokenClient.requestAccessToken({prompt:''});
+  else { toast('Gmail não disponível','w'); }
+}
+
+function sendGmail({to, cc, subject, body, onSuccess}){
+  const mime=[
+    `To: ${to}`,
+    cc?`Cc: ${cc}`:'',
+    `Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: quoted-printable',
+    '',
+    body.replace(/[^\x20-\x7E\n\r\t]/g, c=>{
+      const bytes=encodeURIComponent(c).match(/%[0-9A-F]{2}/g)||[];
+      return bytes.map(b=>'='+b.slice(1)).join('');
+    })
+  ].filter(l=>l!==false&&l!==undefined).join('\r\n');
+
+  const encoded=btoa(unescape(encodeURIComponent(mime)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+
+  fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+gmailToken,'Content-Type':'application/json'},
+    body:JSON.stringify({raw:encoded})
+  }).then(r=>{
+    if(r.ok){ if(onSuccess) onSuccess(); }
+    else r.json().then(e=>toast('Erro ao enviar: '+(e.error?.message||'desconhecido'),'w'));
+  }).catch(()=>toast('Falha de conexão','w'));
+}
+
 function buildCcList(extraEmails){
   const fixed=['oaraujo@livemode.com','sstamm@livemode.com','isouza@livemode.com'];
   const dynamic=S.user&&S.role==='admin'&&!fixed.includes(S.user.email)?[S.user.email]:[];
@@ -813,7 +870,7 @@ function doLogin(){
   const rb=document.getElementById('sb-role');
   rb.innerHTML=S.role==='admin'?'<span class="role-badge rb-admin">Admin</span>':'<span class="role-badge rb-colab">Colaborador</span>';
   applyRole(); renderAll();
-  // init Gmail after short delay to ensure gsi loaded
+  setTimeout(initGmailTokenClient, 600);
 }
 function signOut(){
   S.user=null; S.role='colab';
@@ -1435,16 +1492,23 @@ function enviarEmailCineg(){
   const subject=document.getElementById('ec-assunto-inp').value.trim();
   const body=document.getElementById('ec-prev').value;
   if(!para){toast('Informe o email do destinatário','w');return;}
-  openMailto(`mailto:${para}?subject=${encodeURIComponent(subject)}&cc=${encodeURIComponent(cc)}&body=${encodeURIComponent(body)}`);
-  // Commit assignment if pending
-  const d=S._pendingEmail;
-  if(d&&d.pedidoId){
-    const p=S.pedidos.find(x=>x.id===d.pedidoId);
-    if(p){p.cineg=d.cineg; p.assist=d.assist; p.chegada=d.chegada; p.status='conf';}
-  }
-  S._pendingEmail=null;
-  save(); closeM('m-email-cineg'); renderAll(); renderPed();
-  toast('Email aberto! Pedido confirmado ✓');
+
+  const doSend=()=>{
+    toast('Enviando email...','i');
+    sendGmail({to:para, cc, subject, body,
+      onSuccess:()=>{
+        const d=S._pendingEmail;
+        if(d&&d.pedidoId){
+          const p=S.pedidos.find(x=>x.id===d.pedidoId);
+          if(p){p.cineg=d.cineg; p.assist=d.assist; p.chegada=d.chegada; p.status='conf';}
+        }
+        S._pendingEmail=null;
+        save(); closeM('m-email-cineg'); renderAll(); renderPed();
+        toast('Email enviado com sucesso! ✓');
+      }
+    });
+  };
+  withGmailToken(doSend);
 }
 
 // ══════════════════════════════════════════════════
@@ -1468,13 +1532,21 @@ function openEnviar(){
 }
 
 function enviarComitti(){
-  const para=document.getElementById('com-para').value;
-  const ccExtra=document.getElementById('com-cc').value;
+  const para=document.getElementById('com-para').value.trim();
+  const ccExtra=document.getElementById('com-cc').value.trim();
   const body=document.getElementById('com-prev').textContent;
+  if(!para){toast('Informe o email do Comitti','w');return;}
   const ccList=buildCcList([ccExtra]).filter(v=>v!==para).join(',');
-  let href=`mailto:${para}?subject=${encodeURIComponent('Pedidos de Cobertura — CoverDesk')}&cc=${encodeURIComponent(ccList)}&body=${encodeURIComponent(body)}`;
-  openMailto(href);
-  closeM('m-comitti'); toast('Email ao Comitti aberto!');
+  const subject='Pedidos de Cobertura — CoverDesk';
+
+  withGmailToken(()=>{
+    toast('Enviando ao Comitti...','i');
+    sendGmail({to:para, cc:ccList, subject, body,
+      onSuccess:()=>{
+        closeM('m-comitti'); toast('Email enviado ao Comitti ✓');
+      }
+    });
+  });
 }
 
 // ══════════════════════════════════════════════════
