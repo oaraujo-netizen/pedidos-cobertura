@@ -91,7 +91,9 @@
   .importar-area { width: 100%; min-height: 180px; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #fafaf9; resize: vertical; }
   .resultado-item { background: #fafaf9; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; border: 1px solid #e5e5e5; }
 
-  .empty { text-align: center; color: #aaa; font-size: 14px; padding: 40px 0; }
+  .email-tag { display:flex; align-items:center; justify-content:space-between; background:#f5f5f3; border:1px solid #e5e5e5; border-radius:8px; padding:8px 12px; font-size:13px; }
+  .email-tag input { border:none; background:transparent; outline:none; font-size:13px; flex:1; color:#1a1a1a; padding:0; }
+  .email-tag .btn-x { color:#aaa; font-size:16px; }
   @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .grid3 { grid-template-columns: 1fr 24px 1fr; } }
 </style>
 </head>
@@ -121,6 +123,7 @@ const CFG = {
     <div class="header-right">
       <span class="user-info" id="user-name"></span>
       <span class="badge" id="badge-total">0 pedidos</span>
+      <button class="btn-logout" onclick="abrirConfig()">⚙ Config</button>
       <button class="btn-logout" onclick="logout()">Sair</button>
     </div>
   </div>
@@ -193,6 +196,33 @@ const CFG = {
   </div>
 </div>
 
+<!-- MODAL CONFIG -->
+<div class="modal-bg" id="modal-config">
+  <div class="modal" style="max-width:580px">
+    <h2>Configurações de email</h2>
+
+    <!-- EMAIL COMITTI -->
+    <p style="font-size:13px;color:#666;margin-bottom:8px;font-weight:500">Email do Comitti (Para:)</p>
+    <div id="lista-comitti" style="display:grid;gap:6px;margin-bottom:8px"></div>
+    <button class="btn btn-sm" onclick="adicionarEmail('comitti')" style="margin-bottom:20px">+ Adicionar email</button>
+
+    <!-- CC -->
+    <p style="font-size:13px;color:#666;margin-bottom:8px;font-weight:500">Emails em cópia (CC)</p>
+    <div id="lista-cc" style="display:grid;gap:6px;margin-bottom:8px"></div>
+    <button class="btn btn-sm" onclick="adicionarEmail('cc')" style="margin-bottom:20px">+ Adicionar email</button>
+
+    <!-- BCC -->
+    <p style="font-size:13px;color:#666;margin-bottom:8px;font-weight:500">Email cópia oculta (BCC)</p>
+    <div id="lista-bcc" style="display:grid;gap:6px;margin-bottom:20px"></div>
+    <button class="btn btn-sm" onclick="adicionarEmail('bcc')" style="margin-bottom:20px">+ Adicionar email</button>
+
+    <div class="modal-btns">
+      <button class="btn btn-blue" onclick="salvarConfig()">Salvar</button>
+      <button class="btn" onclick="fecharConfig()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EMAIL -->
 <div class="modal-bg" id="modal">
   <div class="modal">
@@ -224,9 +254,82 @@ let importResult = [];
 let accessToken = null;
 
 // ══════════════════════════════════════════════
+// CONFIGURAÇÕES DE EMAIL
+// ══════════════════════════════════════════════
+let cfgEmails = { comitti: [], cc: [], bcc: [] };
+
+function carregarConfig() {
+  const saved = JSON.parse(localStorage.getItem("ped_cfg2")||"{}");
+  cfgEmails.comitti = saved.comitti || CFG.email_comitti.split(",").map(e=>e.trim());
+  cfgEmails.cc      = saved.cc      || CFG.email_cc.split(",").map(e=>e.trim());
+  cfgEmails.bcc     = saved.bcc     || CFG.email_bcc.split(",").map(e=>e.trim());
+  aplicarConfig();
+}
+
+function aplicarConfig() {
+  CFG.email_comitti = cfgEmails.comitti[0] || "";
+  CFG.email_cc      = cfgEmails.cc.join(",");
+  CFG.email_bcc     = cfgEmails.bcc.join(",");
+}
+
+function renderLista(tipo) {
+  const el = document.getElementById("lista-"+tipo);
+  if (!cfgEmails[tipo].length) {
+    el.innerHTML = '<p style="font-size:13px;color:#aaa;padding:4px 0">Nenhum email cadastrado.</p>';
+    return;
+  }
+  el.innerHTML = cfgEmails[tipo].map((email, i) => `
+    <div class="email-tag">
+      <span style="flex:1;font-size:13px;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${email}</span>
+      <button class="btn-x" onclick="removerEmail('${tipo}',${i})" title="Remover">×</button>
+    </div>`).join("");
+}
+
+function mostrarNovo(tipo) {
+  document.getElementById("novo-"+tipo).style.display = "block";
+  document.getElementById("btn-add-"+tipo).style.display = "none";
+  setTimeout(() => document.getElementById("input-novo-"+tipo).focus(), 50);
+}
+
+function cancelarNovo(tipo) {
+  document.getElementById("input-novo-"+tipo).value = "";
+  document.getElementById("novo-"+tipo).style.display = "none";
+  document.getElementById("btn-add-"+tipo).style.display = "inline-flex";
+}
+
+function confirmarNovo(tipo) {
+  const val = document.getElementById("input-novo-"+tipo).value.trim();
+  if (!val || !val.includes("@")) { flash("Informe um email válido.","err"); return; }
+  cfgEmails[tipo].push(val);
+  renderLista(tipo);
+  cancelarNovo(tipo);
+}
+
+function removerEmail(tipo, idx) {
+  cfgEmails[tipo].splice(idx, 1);
+  renderLista(tipo);
+}
+
+function abrirConfig() {
+  renderLista("comitti");
+  renderLista("cc");
+  renderLista("bcc");
+  document.getElementById("modal-config").classList.add("open");
+}
+function fecharConfig() { document.getElementById("modal-config").classList.remove("open"); }
+
+function salvarConfig() {
+  aplicarConfig();
+  localStorage.setItem("ped_cfg2", JSON.stringify(cfgEmails));
+  fecharConfig();
+  flash("Configurações salvas com sucesso!","ok");
+}
+
+// ══════════════════════════════════════════════
 // GOOGLE AUTH
 // ══════════════════════════════════════════════
 window.onload = () => {
+  carregarConfig();
   google.accounts.id.initialize({
     client_id: CFG.google_client_id,
     callback: onGoogleLogin,
