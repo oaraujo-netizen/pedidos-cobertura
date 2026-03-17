@@ -281,7 +281,7 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
   <header class="topbar">
     <div class="tbtitle" id="pg-title">Dashboard</div>
     <div class="tbr">
-      <button class="btn bg admin-only" onclick="openEnviar()">
+      <button class="btn bg" onclick="openEnviar()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         Enviar ao Comitti
       </button>
@@ -856,8 +856,13 @@ function sendGmail({to,cc,subject,body,onSuccess}){
 }
 
 function buildCcList(extraEmails){
-  // Fixos sempre: oaraujo, sstamm. Extras passados (ex: solicitante do pedido)
-  const fixed=['oaraujo@livemode.com','sstamm@livemode.com'];
+  const fixed=[
+    'oaraujo@livemode.com',
+    'sstamm@livemode.com',
+    'redes@livemode.com',
+    'inovello@livemode.com',
+    'bcoutinho@livemode.com'
+  ];
   return [...fixed,...(extraEmails||[])].filter((v,i,a)=>v&&a.indexOf(v)===i);
 }
 
@@ -1409,7 +1414,7 @@ Qualquer dúvida, entre em contato.
 LiveCapture — Gestão de Coberturas`;
 
   const para=c?.email||'';
-  const ccList=buildCcList([p.solEmail]).filter(v=>v!==para);
+  const ccList=buildCcList([]).filter(v=>v!==para);
   const subject=`[LiveCapture] Confirmação de cobertura — ${p.casa} x ${p.visit}`;
 
   // Store pending send data
@@ -1599,7 +1604,10 @@ function enviarComitti(){
   const ccExtra=document.getElementById('com-cc').value.trim();
   const body=document.getElementById('com-prev').textContent;
   if(!para){toast('Informe o email do Comitti','w');return;}
-  const ccList=buildCcList([ccExtra]).filter(v=>v!==para).join(',');
+  // Collect solicitante emails from all pedidos na fila
+  const fila=S.pedidos.filter(p=>p.status==='novo');
+  const solEmails=fila.map(p=>p.solEmail).filter(Boolean);
+  const ccList=buildCcList([...solEmails, ccExtra]).filter(v=>v!==para).join(',');
   const subject='Pedidos de Cobertura — LiveCapture';
 
   withGmailToken(()=>{
