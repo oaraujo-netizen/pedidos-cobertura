@@ -553,23 +553,24 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
 <div class="mo" id="m-email-cineg">
   <div class="md">
     <div class="mh">
-      <div><div class="mtitle">Email para o Cinegrafista</div><div class="msub" id="ec-sub">Prévia do email de confirmação</div></div>
+      <div><div class="mtitle" id="ec-title">Confirmar envio de email</div><div class="msub" id="ec-sub">Verifique os destinatários e o conteúdo</div></div>
       <button class="xcl" onclick="closeM('m-email-cineg')">✕</button>
     </div>
     <div class="mb">
       <div class="fg">
         <div class="fg fg2">
-          <div class="fgrp"><label class="fl">Para (cinegrafista)</label><input type="email" class="fc2" id="ec-para" placeholder="email@cinegrafista.com"/></div>
-          <div class="fgrp"><label class="fl">CC</label><input type="email" class="fc2" id="ec-cc" placeholder="copia@email.com"/></div>
+          <div class="fgrp"><label class="fl">Para:</label><input type="email" class="fc2" id="ec-para-inp" placeholder="email@destinatario.com"/></div>
+          <div class="fgrp"><label class="fl">CC:</label><input type="text" class="fc2" id="ec-cc-inp" placeholder="email1@, email2@..."/></div>
         </div>
-        <div class="fgrp"><label class="fl">Prévia do email</label><div class="eprev" id="ec-prev"></div></div>
+        <div class="fgrp"><label class="fl">Assunto:</label><input type="text" class="fc2" id="ec-assunto-inp"/></div>
+        <div class="fgrp"><label class="fl">Conteúdo do email</label><textarea class="fc2" id="ec-prev" rows="10" style="font-family:monospace;font-size:12px;line-height:1.6"></textarea></div>
       </div>
     </div>
     <div class="mf">
       <button class="btn bg" onclick="cpEmail('ec-prev')">Copiar texto</button>
-      <button class="btn bp" onclick="enviarEmailCineg()">
+      <button class="btn bp" id="ec-send-btn" onclick="enviarEmailCineg()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        Abrir no cliente de email
+        Confirmar e abrir email
       </button>
     </div>
   </div>
@@ -754,10 +755,10 @@ const ADMINS=['demo-admin','sergio'];
 // STATE
 // ══════════════════════════════════════════════════
 let S={
-  user:null, role:'colab', // 'admin' | 'colab'
+  user:null, role:'colab',
   pedidos:[], precos:[],
   selTipo:null, editId:null, atribId:null, editPrecoId:null,
-  filter:'todos', waGames:[]
+  filter:'todos', waGames:[], _pendingEmail:null
 };
 
 function save(){localStorage.setItem('cd4',JSON.stringify({pedidos:S.pedidos,precos:S.precos,cineg:CINEG,user:S.user,role:S.role}))}
@@ -1307,12 +1308,9 @@ function confirmarAtrib(){
   if(!cineg){toast('Selecione o cinegrafista','w');return;}
   const p=S.pedidos.find(x=>x.id===S.atribId); if(!p) return;
   const arr=calcArrival(p.hora);
-  p.cineg=cineg; p.assist=document.getElementById('a-assist').value;
-  p.chegada=arr; p.status='conf';
-  save(); closeM('m-atrib'); renderAll(); renderPed();
+  const c=gc(cineg); const a=ga(document.getElementById('a-assist').value);
 
-  // Monta e abre email direto, igual ao Comitti
-  const c=gc(cineg); const a=ga(p.assist);
+  // Build email content
   const corpo=`Olá, ${c?c.nome:''}!
 
 Você foi confirmado(a) para a seguinte cobertura:
@@ -1334,11 +1332,22 @@ Qualquer dúvida, entre em contato.
 CoverDesk — Gestão de Coberturas`;
 
   const para=c?.email||'';
-  // CC: admins fixos + solicitante do pedido
-  const ccList=buildCcList([p.solEmail]).filter(v=>v!==para).join(',');
-  const sub=encodeURIComponent(`[CoverDesk] Confirmação de cobertura — ${p.casa} x ${p.visit}`);
-  openMailto(`mailto:${para}?subject=${sub}&cc=${encodeURIComponent(ccList)}&body=${encodeURIComponent(corpo)}`);
-  toast('Email aberto! Pedido confirmado ✓');
+  const ccList=buildCcList([p.solEmail]).filter(v=>v!==para);
+  const subject=`[CoverDesk] Confirmação de cobertura — ${p.casa} x ${p.visit}`;
+
+  // Store pending send data
+  S._pendingEmail={para, cc:ccList.join(','), subject, body:corpo, pedidoId:p.id, cineg, assist:document.getElementById('a-assist').value, chegada:arr};
+
+  // Populate editable preview modal
+  document.getElementById('ec-title').textContent='Confirmar envio ao Cinegrafista';
+  document.getElementById('ec-sub').textContent=`${p.casa} x ${p.visit} — ${fd(p.data)} ${p.hora}`;
+  document.getElementById('ec-para-inp').value=para;
+  document.getElementById('ec-cc-inp').value=ccList.join(', ');
+  document.getElementById('ec-assunto-inp').value=subject;
+  document.getElementById('ec-prev').value=corpo;
+
+  closeM('m-atrib');
+  document.getElementById('m-email-cineg').classList.add('open');
 }
 
 function confirmarTerc(){
@@ -1349,12 +1358,21 @@ function confirmarTerc(){
   p.tercDur=document.getElementById('t-dur').value;
   p.tercQtd=document.getElementById('t-qtd').value;
   save(); closeM('m-atrib'); renderAll(); renderPed();
+
   buildEmailTerc(p);
   const body=document.getElementById('ec-prev').textContent;
-  const sub=encodeURIComponent(`[CoverDesk] Custo de terceirização — ${p.casa} x ${p.visit}`);
-  const ccTerc=buildCcList([]).join(',');
-  openMailto(`mailto:${p.solEmail}?subject=${sub}&cc=${encodeURIComponent(ccTerc)}&body=${encodeURIComponent(body)}`);
-  toast('Terceirização registrada! Email de custo aberto.');
+  const subject=`[CoverDesk] Custo de terceirização — ${p.casa} x ${p.visit}`;
+  const ccTerc=buildCcList([]).filter(v=>v!==p.solEmail).join(',');
+
+  S._pendingEmail={para:p.solEmail, cc:ccTerc, subject, body, pedidoId:null};
+
+  document.getElementById('ec-title').textContent='Confirmar envio de custo';
+  document.getElementById('ec-sub').textContent=`Custo de terceirização — ${p.casa} x ${p.visit}`;
+  document.getElementById('ec-para-inp').value=p.solEmail||'';
+  document.getElementById('ec-cc-inp').value=ccTerc.split(',').filter(Boolean).join(', ');
+  document.getElementById('ec-assunto-inp').value=subject;
+  document.getElementById('ec-prev').value=body;
+  document.getElementById('m-email-cineg').classList.add('open');
 }
 
 function buildEmailCineg(p){
@@ -1412,18 +1430,21 @@ CoverDesk — Gestão de Coberturas`;
 }
 
 function enviarEmailCineg(){
-  const para=document.getElementById('ec-para').value.trim();
-  if(!para){toast('Informe o email do cinegrafista','w');return;}
-  const cc=document.getElementById('ec-cc').value.trim();
-  const body=document.getElementById('ec-prev').textContent;
-  const p=S.pedidos.find(x=>x.id===S.atribId);
-  const sub=encodeURIComponent(`[CoverDesk] Confirmação de cobertura — ${p?p.casa+' x '+p.visit:''}`);
-  let href=`mailto:${para}?subject=${sub}&body=${encodeURIComponent(body)}`;
-  if(cc) href+=`&cc=${cc}`;
-  openMailto(href);
-  if(p) p.status='conf';
+  const para=document.getElementById('ec-para-inp').value.trim();
+  const cc=document.getElementById('ec-cc-inp').value.trim();
+  const subject=document.getElementById('ec-assunto-inp').value.trim();
+  const body=document.getElementById('ec-prev').value;
+  if(!para){toast('Informe o email do destinatário','w');return;}
+  openMailto(`mailto:${para}?subject=${encodeURIComponent(subject)}&cc=${encodeURIComponent(cc)}&body=${encodeURIComponent(body)}`);
+  // Commit assignment if pending
+  const d=S._pendingEmail;
+  if(d&&d.pedidoId){
+    const p=S.pedidos.find(x=>x.id===d.pedidoId);
+    if(p){p.cineg=d.cineg; p.assist=d.assist; p.chegada=d.chegada; p.status='conf';}
+  }
+  S._pendingEmail=null;
   save(); closeM('m-email-cineg'); renderAll(); renderPed();
-  toast('Email aberto! Pedido marcado como confirmado.');
+  toast('Email aberto! Pedido confirmado ✓');
 }
 
 // ══════════════════════════════════════════════════
@@ -1572,7 +1593,9 @@ function setFilt(f,btn){
 }
 
 function cpEmail(id){
-  navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>toast('Copiado!'));
+  const el=document.getElementById(id);
+  const txt=el.tagName==='TEXTAREA'?el.value:el.textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('Copiado!'));
 }
 
 function toast(msg,type='s'){
