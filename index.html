@@ -628,13 +628,8 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
           Identificar jogos
         </button>
         <div id="wa-res" style="display:none">
-          <div class="fgrp"><label class="fl">Jogos identificados</label><div class="wgl" id="wa-gl"></div></div>
-          <div class="fg fg2" style="margin-top:4px">
-            <div class="fgrp"><label class="fl">Tipo padrão</label>
-              <select class="fc2" id="wa-tipo"><option>Eng Completa</option><option>ENG</option><option>Drone</option><option>Gravação</option><option>TVU</option><option>LiveU</option></select>
-            </div>
-            <div class="fgrp"><label class="fl">Competição</label><input type="text" class="fc2" id="wa-comp" placeholder="Campeonato..."/></div>
-          </div>
+          <div class="fgrp"><label class="fl">Jogos identificados — clique para deselecionar</label><div class="wgl" id="wa-gl"></div></div>
+          <div style="font-size:12px;color:var(--tx2);margin-top:6px">A competição é detectada automaticamente do texto. O tipo de cobertura será definido pelo admin ao atribuir.</div>
         </div>
       </div>
     </div>
@@ -1570,49 +1565,75 @@ function parseWa(){
   if(!text.trim()){toast('Cole uma lista primeiro','w');return;}
   S.waGames=[];
 
+  let currentDate=null; // tracks the current day header
+  const currentYear=new Date().getFullYear();
+
   text.split('\n').map(l=>l.trim()).filter(Boolean).forEach(line=>{
-    // Remove common prefixes like "1.", "1-", bullets
-    const clean=line.replace(/^\d+[\.\-\)]\s*/,'').replace(/^[-•*]\s*/,'');
 
-    // Date: dd/mm, dd/mm/yy, dd/mm/yyyy, dd-mm, etc
-    const dateM=clean.match(/(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{2,4}))?/);
+    // Detect day header: "QUARTA, DIA 18/03" or "DIA 18/03" or "SÁBADO, DIA 21/03"
+    const dayHeader=line.match(/DIA\s+(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/i);
+    if(dayHeader){
+      const d=dayHeader[1].padStart(2,'0');
+      const m=dayHeader[2].padStart(2,'0');
+      const y=dayHeader[3]?(dayHeader[3].length===2?'20'+dayHeader[3]:dayHeader[3]):currentYear;
+      currentDate=`${y}-${m}-${d}`;
+      return; // skip this line, it's just a header
+    }
 
-    // Time: 15h00, 15:00, 15h, 15H30
-    const timeM=clean.match(/(\d{1,2})[hH:](\d{2})|\b(\d{1,2})[hH]\b/);
+    // Detect inline date: "18/03" or "18/03/2026"
+    const inlineDate=line.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+    if(inlineDate){
+      const d=inlineDate[1].padStart(2,'0');
+      const m=inlineDate[2].padStart(2,'0');
+      const y=inlineDate[3]?(inlineDate[3].length===2?'20'+inlineDate[3]:inlineDate[3]):currentYear;
+      currentDate=`${y}-${m}-${d}`;
+    }
 
-    // Teams: "Time A x Time B" or "Time A vs Time B" or "Time A X Time B"
-    // More flexible: allows numbers in team names (ex: "Sub-20")
-    const vsM=clean.match(/([A-Za-zÀ-ÿ0-9][A-Za-zÀ-ÿ0-9\s\.\-]{1,}?)\s+[xXvV][sS]?\.?\s+([A-Za-zÀ-ÿ0-9][A-Za-zÀ-ÿ0-9\s\.\-]{1,})/);
+    if(!currentDate) return; // no date context yet
 
-    if(dateM&&vsM){
-      const d=dateM[1].padStart(2,'0');
-      const m=dateM[2].padStart(2,'0');
-      const y=dateM[3]?(dateM[3].length===2?'20'+dateM[3]:dateM[3]):new Date().getFullYear();
+    // Time: 19h, 19h30, 19:30, 18:30, 21h30
+    const timeM=line.match(/\b(\d{1,2})[hH:](\d{2})\b|\b(\d{1,2})[hH]\b/);
+    let hora='';
+    if(timeM){
+      if(timeM[1]&&timeM[2]) hora=`${timeM[1].padStart(2,'0')}:${timeM[2]}`;
+      else if(timeM[3]) hora=`${timeM[3].padStart(2,'0')}:00`;
+    }
 
-      let hora='';
-      if(timeM){
-        if(timeM[1]&&timeM[2]) hora=`${timeM[1].padStart(2,'0')}:${timeM[2]}`;
-        else if(timeM[3]) hora=`${timeM[3].padStart(2,'0')}:00`;
-      }
+    // Teams: extract from "| Time A x Time B" or "| Time A X Time B"
+    // Format: anything after | then "Time x Time" then optional suffix
+    let casa='', visit='';
+    const pipeMatch=line.match(/\|\s*(.+?)\s*$/);
+    const searchStr=pipeMatch?pipeMatch[1]:line;
 
-      const casa=vsM[1].trim().replace(/\s+/g,' ');
-      const visit=vsM[2].trim().replace(/\s+/g,' ');
+    // Match "Time A x Time B" allowing accents, hyphens, spaces
+    const vsM=searchStr.match(/^(.+?)\s+[xX]\s+(.+?)(?:\s+(?:Sem imagens|Freela|Transmissão|LiveU|TVU|ENG|Drone|ao vivo|live).*)?$/i);
+    if(vsM){
+      casa=vsM[1].trim().replace(/\s+/g,' ');
+      visit=vsM[2].trim().replace(/\s+/g,' ');
+    }
 
-      // Avoid matching the date part as a team name
-      if(casa.length>=2&&visit.length>=2){
-        S.waGames.push({date:`${y}-${m}-${d}`,hora,casa,visit});
-      }
+    if(casa.length>=2&&visit.length>=2){
+      // Extract competition (text between first | and second |, or first | and teams)
+      let comp='';
+      const parts=line.split('|');
+      if(parts.length>=2) comp=parts[1].trim();
+      if(parts.length>=3) comp=parts[1].trim();
+
+      S.waGames.push({date:currentDate, hora, casa, visit, comp});
     }
   });
 
   if(!S.waGames.length){
-    toast('Nenhum jogo identificado. Exemplos aceitos: "18/03 21h Corinthians x Palmeiras"','w');
+    toast('Nenhum jogo identificado. Cole a lista no formato exato.','w');
     return;
   }
   document.getElementById('wa-gl').innerHTML=S.waGames.map((g,i)=>`
     <div class="wg sel" id="wg-${i}" onclick="document.getElementById('wg-${i}').classList.toggle('sel')">
       <div class="wck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-      <div><div style="font-weight:500;font-size:13px">${g.casa} x ${g.visit}</div><div style="font-size:11px;color:var(--tx3)">${fd(g.date)} ${g.hora}</div></div>
+      <div>
+        <div style="font-weight:500;font-size:13px">${g.casa} x ${g.visit}</div>
+        <div style="font-size:11px;color:var(--tx3)">${fd(g.date)} ${g.hora}${g.comp?' · '+g.comp:''}</div>
+      </div>
     </div>`).join('');
   document.getElementById('wa-res').style.display='block';
   document.getElementById('btn-wa').style.display='flex';
@@ -1622,21 +1643,19 @@ function parseWa(){
 function importWa(){
   const sol=document.getElementById('wa-sol').value.trim()||S.user?.name||'—';
   const nuc=document.getElementById('wa-nuc').value.trim();
-  const tipo=document.getElementById('wa-tipo').value;
-  const comp=document.getElementById('wa-comp').value.trim();
   const sel=S.waGames.filter((_,i)=>document.getElementById('wg-'+i)?.classList.contains('sel'));
   if(!sel.length){toast('Selecione pelo menos um jogo','w');return;}
   sel.forEach(g=>{
     S.pedidos.push({
       id:Date.now()+Math.random(), solNome:sol, nucleo:nuc,
       solEmail:S.user?.email||'',
-      data:g.date, hora:g.hora, comp, casa:g.casa, visit:g.visit, tipo,
+      data:g.date, hora:g.hora, comp:g.comp||'', casa:g.casa, visit:g.visit, tipo:'',
       prodNome:'', prodCont:'', repNome:'', repCont:'', obs:'',
       status:'novo', cineg:'', assist:'', chegada:'', ts:Date.now()
     });
   });
   save(); closeM('m-wa'); renderAll(); renderPed();
-  toast(`${sel.length} jogo(s) adicionados!`);
+  toast(`${sel.length} jogo(s) adicionados à fila!`);
 }
 
 // ══════════════════════════════════════════════════
