@@ -6,104 +6,88 @@
 <title>Pedidos de Cobertura</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; }
-
-  /* LOGIN */
-  #tela-login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 24px; }
-  #tela-login h1 { font-size: 22px; font-weight: 500; }
-  #tela-login p { font-size: 14px; color: #888; }
-
-  /* APP */
-  #tela-app { display: none; }
-  .header { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
-  .header h1 { font-size: 16px; font-weight: 500; }
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .user-info { font-size: 13px; color: #888; }
-  .btn-logout { font-size: 13px; color: #888; background: none; border: none; cursor: pointer; text-decoration: underline; }
-  .badge { font-size: 12px; background: #e6f1fb; color: #185fa5; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
-
-  .container { max-width: 780px; margin: 0 auto; padding: 24px 16px; }
-  .tabs { display: flex; border-bottom: 1px solid #e5e5e5; margin-bottom: 24px; background: #fff; border-radius: 10px 10px 0 0; overflow: hidden; }
-  .tab { padding: 12px 20px; font-size: 14px; border: none; background: transparent; cursor: pointer; color: #888; border-bottom: 2px solid transparent; font-weight: 400; }
-  .tab.active { color: #1a1a1a; border-bottom: 2px solid #1a1a1a; font-weight: 500; background: #fafaf9; }
-
-  .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .grid3 { display: grid; grid-template-columns: 1fr 36px 1fr; gap: 8px; align-items: end; }
-  .field { display: flex; flex-direction: column; gap: 5px; }
-  label { font-size: 13px; color: #666; }
-  input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff; color: #1a1a1a; outline: none; transition: border .15s; }
-  input:focus, select:focus { border-color: #999; }
-  .sep { text-align: center; font-size: 16px; color: #999; padding-bottom: 2px; }
-
-  .info-box { padding: 10px 14px; border-radius: 8px; font-size: 13px; }
-  .info-blue { background: #e6f1fb; color: #185fa5; border: 1px solid #b5d4f4; }
-  .info-green { background: #e1f5ee; color: #0f6e56; border: 1px solid #9fe1cb; }
-
-  .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #1a1a1a; transition: all .15s; }
-  .btn:hover { background: #f5f5f3; }
-  .btn-blue { background: #185fa5; color: #fff; border-color: #185fa5; }
-  .btn-blue:hover { background: #0c447c; }
-  .btn-sm { padding: 6px 14px; font-size: 13px; }
-  .btn:disabled { opacity: .5; cursor: not-allowed; }
-
-  .fila-box { background: #e6f1fb; border: 1px solid #b5d4f4; border-radius: 10px; padding: 16px; margin-bottom: 20px; }
-  .fila-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .fila-title { font-size: 14px; font-weight: 500; color: #185fa5; }
-  .fila-item { background: #fff; border: 1px solid #b5d4f4; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .fila-nome { font-size: 13px; font-weight: 500; color: #185fa5; }
-  .fila-meta { font-size: 12px; color: #6ca3d4; margin-top: 2px; }
-  .btn-x { background: transparent; border: none; cursor: pointer; color: #6ca3d4; font-size: 18px; padding: 0 4px; }
-
-  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: center; justify-content: center; }
-  .modal-bg.open { display: flex; }
-  .modal { background: #fff; border-radius: 12px; padding: 24px; max-width: 520px; width: 90%; max-height: 80vh; overflow-y: auto; }
-  .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 14px; }
-  .email-preview { background: #f5f5f3; border-radius: 8px; padding: 14px; font-size: 12px; color: #555; line-height: 1.7; white-space: pre-wrap; margin-bottom: 16px; border: 1px solid #e5e5e5; }
-  .email-meta { font-size: 13px; color: #888; margin-bottom: 6px; }
-  .email-meta span { color: #1a1a1a; }
-  .modal-btns { display: flex; gap: 8px; }
-
-  .pedido-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .pedido-nome { font-size: 15px; font-weight: 500; }
-  .pedido-meta { font-size: 13px; color: #888; margin-top: 2px; }
-  .pedido-crew { font-size: 12px; color: #aaa; margin-top: 4px; }
-  .badges { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
-  .pill { font-size: 12px; padding: 3px 10px; border-radius: 12px; font-weight: 500; white-space: nowrap; }
-  .pill-blue { background: #e6f1fb; color: #185fa5; }
-  .pill-teal { background: #e1f5ee; color: #0f6e56; }
-  .pill-green { background: #eaf3de; color: #3b6d11; }
-  .pill-gray { background: #f1efe8; color: #5f5e5a; }
-  .pill-coral { background: #faece7; color: #993c1d; }
-  .pill-ok { background: #e1f5ee; color: #0f6e56; }
-
-  .flash { padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; margin-bottom: 14px; display: none; }
-  .flash.show { display: block; }
-  .flash-ok { background: #e1f5ee; color: #0f6e56; border: 1px solid #9fe1cb; }
-  .flash-err { background: #fcebeb; color: #a32d2d; border: 1px solid #f7c1c1; }
-  .flash-warn { background: #faeeda; color: #854f0b; border: 1px solid #fac775; }
-
-  .filtros { display: flex; gap: 6px; margin-bottom: 14px; }
-  .filtro-btn { padding: 5px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 1px solid #e5e5e5; background: #fff; color: #888; }
-  .filtro-btn.active { border-color: #1a1a1a; color: #1a1a1a; font-weight: 500; }
-
-  .importar-area { width: 100%; min-height: 180px; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #fafaf9; resize: vertical; }
-  .resultado-item { background: #fafaf9; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; border: 1px solid #e5e5e5; }
-
-  .email-tag { display:flex; align-items:center; justify-content:space-between; background:#f5f5f3; border:1px solid #e5e5e5; border-radius:8px; padding:8px 12px; font-size:13px; gap:8px; }
-  .email-tag span { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#1a1a1a; }
-  .email-tag input { border:none; background:transparent; outline:none; font-size:13px; flex:1; color:#1a1a1a; padding:0; min-width:0; }
-  .email-tag .btn-x { color:#aaa; font-size:18px; flex-shrink:0; line-height:1; }
-  .add-email-row { display:flex; gap:8px; margin-top:6px; }
-  .add-email-row input { flex:1; padding:8px 12px; border:1px solid #ddd; border-radius:8px; font-size:13px; }
-  .section-titulo { font-size:13px; color:#666; margin-bottom:8px; font-weight:500; }
-  @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .grid3 { grid-template-columns: 1fr 24px 1fr; } }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; }
+#tela-login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 24px; }
+#tela-login h1 { font-size: 22px; font-weight: 500; }
+#tela-login p { font-size: 14px; color: #888; }
+#tela-app { display: none; }
+.header { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.header h1 { font-size: 16px; font-weight: 500; }
+.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.user-info { font-size: 13px; color: #888; }
+.btn-link { font-size: 13px; color: #666; background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; }
+.badge { font-size: 12px; background: #e6f1fb; color: #185fa5; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
+.container { max-width: 780px; margin: 0 auto; padding: 24px 16px; }
+.tabs { display: flex; border-bottom: 1px solid #e5e5e5; margin-bottom: 24px; background: #fff; border-radius: 10px 10px 0 0; overflow: hidden; }
+.tab { padding: 12px 20px; font-size: 14px; border: none; background: transparent; cursor: pointer; color: #888; border-bottom: 2px solid transparent; font-weight: 400; }
+.tab.active { color: #1a1a1a; border-bottom: 2px solid #1a1a1a; font-weight: 500; background: #fafaf9; }
+.card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: 1fr 36px 1fr; gap: 8px; align-items: end; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+label { font-size: 13px; color: #666; }
+input[type=text], input[type=email], input[type=date], input[type=time], select { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff; color: #1a1a1a; outline: none; transition: border .15s; }
+input:focus, select:focus { border-color: #999; }
+.sep { text-align: center; font-size: 16px; color: #999; padding-bottom: 2px; }
+.info-box { padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+.info-blue { background: #e6f1fb; color: #185fa5; border: 1px solid #b5d4f4; }
+.btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #1a1a1a; transition: all .15s; }
+.btn:hover { background: #f5f5f3; }
+.btn-blue { background: #185fa5; color: #fff; border-color: #185fa5; }
+.btn-blue:hover { background: #0c447c; }
+.btn-sm { padding: 7px 14px; font-size: 13px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.fila-box { background: #e6f1fb; border: 1px solid #b5d4f4; border-radius: 10px; padding: 16px; margin-bottom: 20px; }
+.fila-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.fila-title { font-size: 14px; font-weight: 500; color: #185fa5; }
+.fila-item { background: #fff; border: 1px solid #b5d4f4; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.fila-nome { font-size: 13px; font-weight: 500; color: #185fa5; }
+.fila-meta { font-size: 12px; color: #6ca3d4; margin-top: 2px; }
+.btn-x { background: transparent; border: none; cursor: pointer; color: #aaa; font-size: 18px; padding: 0 4px; line-height: 1; }
+.btn-x:hover { color: #e24b4a; }
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+.modal-bg.open { display: flex; }
+.modal { background: #fff; border-radius: 12px; padding: 24px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+.modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 16px; }
+.email-preview { background: #f5f5f3; border-radius: 8px; padding: 14px; font-size: 12px; color: #555; line-height: 1.7; white-space: pre-wrap; margin-bottom: 16px; border: 1px solid #e5e5e5; }
+.email-meta { font-size: 13px; color: #888; margin-bottom: 6px; }
+.email-meta span { color: #1a1a1a; }
+.modal-btns { display: flex; gap: 8px; margin-top: 8px; }
+.pedido-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.pedido-nome { font-size: 15px; font-weight: 500; }
+.pedido-meta { font-size: 13px; color: #888; margin-top: 2px; }
+.pedido-crew { font-size: 12px; color: #aaa; margin-top: 4px; }
+.badges { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
+.pill { font-size: 12px; padding: 3px 10px; border-radius: 12px; font-weight: 500; white-space: nowrap; }
+.pill-blue { background: #e6f1fb; color: #185fa5; }
+.pill-teal { background: #e1f5ee; color: #0f6e56; }
+.pill-green { background: #eaf3de; color: #3b6d11; }
+.pill-gray { background: #f1efe8; color: #5f5e5a; }
+.pill-coral { background: #faece7; color: #993c1d; }
+.pill-ok { background: #e1f5ee; color: #0f6e56; }
+.flash { padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; margin-bottom: 14px; display: none; }
+.flash.show { display: block; }
+.flash-ok { background: #e1f5ee; color: #0f6e56; border: 1px solid #9fe1cb; }
+.flash-err { background: #fcebeb; color: #a32d2d; border: 1px solid #f7c1c1; }
+.flash-warn { background: #faeeda; color: #854f0b; border: 1px solid #fac775; }
+.filtros { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.filtro-btn { padding: 5px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 1px solid #e5e5e5; background: #fff; color: #888; }
+.filtro-btn.active { border-color: #1a1a1a; color: #1a1a1a; font-weight: 500; }
+.importar-area { width: 100%; min-height: 180px; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #fafaf9; resize: vertical; color: #1a1a1a; }
+.resultado-item { background: #fafaf9; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; border: 1px solid #e5e5e5; gap: 8px; }
+.empty { text-align: center; color: #aaa; font-size: 14px; padding: 40px 0; }
+.cfg-section { margin-bottom: 20px; }
+.cfg-section-title { font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px; }
+.email-tag { display: flex; align-items: center; gap: 8px; background: #f5f5f3; border: 1px solid #e5e5e5; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; }
+.email-tag span { flex: 1; font-size: 13px; color: #1a1a1a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.add-email-row { display: flex; gap: 8px; margin-top: 6px; }
+.add-email-row input { flex: 1; }
+@media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .grid3 { grid-template-columns: 1fr 24px 1fr; } }
 </style>
 </head>
 <body>
 
-<!-- ══════════════ CONFIGURAÇÕES ══════════════ -->
 <script>
 const CFG = {
   google_client_id: "699539167023-8tqk6tfge8uf3ejd6cmiudql27bctd2a.apps.googleusercontent.com",
@@ -113,29 +97,28 @@ const CFG = {
 };
 </script>
 
-<!-- ══════════════ TELA DE LOGIN ══════════════ -->
+<!-- LOGIN -->
 <div id="tela-login">
   <h1>Pedidos de Cobertura</h1>
   <p>Entre com sua conta Google para continuar</p>
   <div id="btn-google-login"></div>
 </div>
 
-<!-- ══════════════ TELA DO APP ══════════════ -->
+<!-- APP -->
 <div id="tela-app">
   <div class="header">
     <h1>Pedidos de Cobertura</h1>
     <div class="header-right">
       <span class="user-info" id="user-name"></span>
       <span class="badge" id="badge-total">0 pedidos</span>
-      <button class="btn-logout" onclick="abrirConfig()">⚙ Config</button>
-      <button class="btn-logout" onclick="logout()">Sair</button>
+      <button class="btn-link" onclick="abrirConfig()">⚙ Configurações</button>
+      <button class="btn-link" onclick="logout()">Sair</button>
     </div>
   </div>
 
   <div class="container">
     <div id="flash" class="flash"></div>
 
-    <!-- FILA COMITTI -->
     <div class="fila-box" id="fila-box" style="display:none">
       <div class="fila-header">
         <span class="fila-title" id="fila-title">0 jogo(s) na fila para Comitti</span>
@@ -144,14 +127,12 @@ const CFG = {
       <div id="fila-lista"></div>
     </div>
 
-    <!-- TABS -->
     <div class="tabs">
       <button class="tab active" onclick="setTab('novo',this)">+ Novo pedido</button>
       <button class="tab" onclick="setTab('lista',this)">Lista</button>
       <button class="tab" onclick="setTab('importar',this)">Importar WhatsApp</button>
     </div>
 
-    <!-- TAB NOVO -->
     <div id="tab-novo">
       <div class="card" style="display:grid;gap:14px">
         <div class="grid2">
@@ -174,7 +155,6 @@ const CFG = {
       </div>
     </div>
 
-    <!-- TAB LISTA -->
     <div id="tab-lista" style="display:none">
       <div class="filtros">
         <button class="filtro-btn active" onclick="setFiltro('todos',this)">Todos</button>
@@ -184,7 +164,6 @@ const CFG = {
       <div id="lista-pedidos"></div>
     </div>
 
-    <!-- TAB IMPORTAR -->
     <div id="tab-importar" style="display:none">
       <div class="card" style="display:grid;gap:14px">
         <p style="font-size:14px;color:#888">Cole a lista recebida pelo WhatsApp. O sistema identifica os jogos automaticamente.</p>
@@ -200,25 +179,37 @@ const CFG = {
   </div>
 </div>
 
-<!-- MODAL CONFIG -->
+<!-- MODAL CONFIGURAÇÕES -->
 <div class="modal-bg" id="modal-config">
-  <div class="modal" style="max-width:580px">
+  <div class="modal" style="max-width:560px">
     <h2>Configurações de email</h2>
 
-    <!-- EMAIL COMITTI -->
-    <p style="font-size:13px;color:#666;margin-bottom:8px;font-weight:500">Email do Comitti (Para:)</p>
-    <div id="lista-comitti" style="display:grid;gap:6px;margin-bottom:8px"></div>
-    <button class="btn btn-sm" onclick="adicionarEmail('comitti')" style="margin-bottom:20px">+ Adicionar email</button>
+    <div class="cfg-section">
+      <p class="cfg-section-title">Email do Comitti (Para:)</p>
+      <div id="lista-comitti"></div>
+      <div class="add-email-row">
+        <input type="email" id="input-novo-comitti" placeholder="novo@email.com" onkeydown="if(event.key==='Enter')confirmarNovo('comitti')">
+        <button class="btn btn-blue btn-sm" onclick="confirmarNovo('comitti')">Adicionar</button>
+      </div>
+    </div>
 
-    <!-- CC -->
-    <p style="font-size:13px;color:#666;margin-bottom:8px;font-weight:500">Emails em cópia (CC)</p>
-    <div id="lista-cc" style="display:grid;gap:6px;margin-bottom:8px"></div>
-    <button class="btn btn-sm" onclick="adicionarEmail('cc')" style="margin-bottom:20px">+ Adicionar email</button>
+    <div class="cfg-section">
+      <p class="cfg-section-title">Emails em cópia (CC)</p>
+      <div id="lista-cc"></div>
+      <div class="add-email-row">
+        <input type="email" id="input-novo-cc" placeholder="novo@email.com" onkeydown="if(event.key==='Enter')confirmarNovo('cc')">
+        <button class="btn btn-blue btn-sm" onclick="confirmarNovo('cc')">Adicionar</button>
+      </div>
+    </div>
 
-    <!-- BCC -->
-    <p style="font-size:13px;color:#666;margin-bottom:8px;font-weight:500">Email cópia oculta (BCC)</p>
-    <div id="lista-bcc" style="display:grid;gap:6px;margin-bottom:20px"></div>
-    <button class="btn btn-sm" onclick="adicionarEmail('bcc')" style="margin-bottom:20px">+ Adicionar email</button>
+    <div class="cfg-section">
+      <p class="cfg-section-title">Email cópia oculta (BCC)</p>
+      <div id="lista-bcc"></div>
+      <div class="add-email-row">
+        <input type="email" id="input-novo-bcc" placeholder="novo@email.com" onkeydown="if(event.key==='Enter')confirmarNovo('bcc')">
+        <button class="btn btn-blue btn-sm" onclick="confirmarNovo('bcc')">Adicionar</button>
+      </div>
+    </div>
 
     <div class="modal-btns">
       <button class="btn btn-blue" onclick="salvarConfig()">Salvar</button>
@@ -243,9 +234,6 @@ const CFG = {
 </div>
 
 <script>
-// ══════════════════════════════════════════════
-// DADOS
-// ══════════════════════════════════════════════
 const TIMES = ["Athletico","Atlético-MG","Bahia","Botafogo","Bragantino","Chapecoense","Corinthians","Coritiba","Cruzeiro","Flamengo","Fluminense","Fortaleza","Grêmio","Internacional","Mirassol","Palmeiras","Remo","Santos","São Paulo","Vasco","Vitória","Red Bull Bragantino","América-MG","Avaí","Botafogo-SP","CRB","Ceará","Criciúma","CSA","Guarani","Goiás","Ituano","Juventude","Londrina","Novorizontino","Operário","Paysandu","Ponte Preta","Santa Cruz","Sport","Vila Nova"].sort();
 const COMPS = ["Brasileirão Série A 2026","Brasileirão Série B 2026","Copa do Brasil 2026","Copa Sul-Americana","Copa Libertadores"];
 const TIPOS = ["Freela do Comitti","LiveU","TVU","Sem imagens","Transmissão CazéTV"];
@@ -256,389 +244,192 @@ let fila    = JSON.parse(localStorage.getItem("ped_fila4")||"[]");
 let filtroAtivo = "todos";
 let importResult = [];
 let accessToken = null;
+let cfgEmails = { comitti:[], cc:[], bcc:[] };
 
-// ══════════════════════════════════════════════
-// CONFIGURAÇÕES DE EMAIL
-// ══════════════════════════════════════════════
-let cfgEmails = { comitti: [], cc: [], bcc: [] };
-
-function carregarConfig() {
-  const saved = JSON.parse(localStorage.getItem("ped_cfg2")||"{}");
-  cfgEmails.comitti = saved.comitti || CFG.email_comitti.split(",").map(e=>e.trim());
-  cfgEmails.cc      = saved.cc      || CFG.email_cc.split(",").map(e=>e.trim());
-  cfgEmails.bcc     = saved.bcc     || CFG.email_bcc.split(",").map(e=>e.trim());
-  aplicarConfig();
-}
-
-function aplicarConfig() {
-  CFG.email_comitti = cfgEmails.comitti[0] || "";
-  CFG.email_cc      = cfgEmails.cc.join(",");
-  CFG.email_bcc     = cfgEmails.bcc.join(",");
-}
-
-function renderLista(tipo) {
-  const el = document.getElementById("lista-"+tipo);
-  if (!cfgEmails[tipo].length) {
-    el.innerHTML = '<p style="font-size:13px;color:#aaa;padding:2px 0">Nenhum email cadastrado.</p>';
-    return;
-  }
-  el.innerHTML = cfgEmails[tipo].map((email, i) => `
-    <div class="email-tag">
-      <span>${email}</span>
-      <button class="btn-x" onclick="removerEmail('${tipo}',${i})" title="Remover">×</button>
-    </div>`).join("");
-}
-
-function confirmarNovo(tipo) {
-  const input = document.getElementById("input-novo-"+tipo);
-  const val = input.value.trim();
-  if (!val || !val.includes("@")) { flash("Informe um email válido.","err"); return; }
-  if (cfgEmails[tipo].includes(val)) { flash("Este email já está na lista.","err"); return; }
-  cfgEmails[tipo].push(val);
-  input.value = "";
-  renderLista(tipo);
-}
-
-function removerEmail(tipo, idx) {
-  cfgEmails[tipo].splice(idx, 1);
-  renderLista(tipo);
-}
-
-function abrirConfig() {
-  renderLista("comitti");
-  renderLista("cc");
-  renderLista("bcc");
-  document.getElementById("modal-config").classList.add("open");
-}
-function fecharConfig() { document.getElementById("modal-config").classList.remove("open"); }
-
-function salvarConfig() {
-  aplicarConfig();
-  localStorage.setItem("ped_cfg2", JSON.stringify(cfgEmails));
-  fecharConfig();
-  flash("Configurações salvas com sucesso!","ok");
-}
-
-// ══════════════════════════════════════════════
-// GOOGLE AUTH
-// ══════════════════════════════════════════════
+// ── GOOGLE AUTH ──────────────────────────────────────────
 window.onload = () => {
   carregarConfig();
-  google.accounts.id.initialize({
-    client_id: CFG.google_client_id,
-    callback: onGoogleLogin,
-    auto_select: true
-  });
-  google.accounts.id.renderButton(
-    document.getElementById("btn-google-login"),
-    { theme: "outline", size: "large", text: "signin_with_google", locale: "pt-BR" }
-  );
+  google.accounts.id.initialize({ client_id: CFG.google_client_id, callback: onGoogleLogin, auto_select: true });
+  google.accounts.id.renderButton(document.getElementById("btn-google-login"), { theme:"outline", size:"large", locale:"pt-BR" });
   google.accounts.id.prompt();
 };
 
 function onGoogleLogin(response) {
   const payload = parseJwt(response.credential);
   document.getElementById("user-name").textContent = payload.email;
-
-  // Solicita token OAuth com escopo Gmail
   const client = google.accounts.oauth2.initTokenClient({
     client_id: CFG.google_client_id,
     scope: "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose",
-    callback: (tokenResponse) => {
-      accessToken = tokenResponse.access_token;
-      document.getElementById("tela-login").style.display = "none";
-      document.getElementById("tela-app").style.display = "block";
-      iniciarApp();
-    }
+    callback: (tr) => { accessToken = tr.access_token; document.getElementById("tela-login").style.display="none"; document.getElementById("tela-app").style.display="block"; iniciarApp(); }
   });
   client.requestAccessToken();
 }
-
 function parseJwt(token) {
-  const base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-  return JSON.parse(decodeURIComponent(atob(base64).split('').map(c => '%' + ('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+  const b = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+  return JSON.parse(decodeURIComponent(atob(b).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
 }
+function logout() { google.accounts.id.disableAutoSelect(); accessToken=null; document.getElementById("tela-app").style.display="none"; document.getElementById("tela-login").style.display="flex"; }
 
-function logout() {
-  google.accounts.id.disableAutoSelect();
-  accessToken = null;
-  document.getElementById("tela-app").style.display = "none";
-  document.getElementById("tela-login").style.display = "flex";
-}
-
-// ══════════════════════════════════════════════
-// INIT APP
-// ══════════════════════════════════════════════
+// ── INIT ─────────────────────────────────────────────────
 function iniciarApp() {
   preencherSelect("f-comp", COMPS);
   preencherSelect("f-tipo", TIPOS);
   preencherSelectOpt("f-casa", TIMES);
   preencherSelectOpt("f-visit", TIMES);
-  onTipoChange();
-  renderFila();
-  renderLista();
-  atualizarBadge();
+  onTipoChange(); renderFila(); renderLista(); atualizarBadge();
 }
+function preencherSelect(id, arr) { const el=document.getElementById(id); arr.forEach(v=>{const o=document.createElement("option");o.value=o.textContent=v;el.appendChild(o);}); }
+function preencherSelectOpt(id, arr) { const el=document.getElementById(id); el.innerHTML='<option value="">Selecione...</option>'; arr.forEach(v=>{const o=document.createElement("option");o.value=o.textContent=v;el.appendChild(o);}); }
 
-function preencherSelect(id, arr) {
-  const el = document.getElementById(id);
-  arr.forEach(v => { const o = document.createElement("option"); o.value = o.textContent = v; el.appendChild(o); });
-}
-function preencherSelectOpt(id, arr) {
-  const el = document.getElementById(id); el.innerHTML = '<option value="">Selecione...</option>';
-  arr.forEach(v => { const o = document.createElement("option"); o.value = o.textContent = v; el.appendChild(o); });
-}
-
-// ══════════════════════════════════════════════
-// TABS
-// ══════════════════════════════════════════════
+// ── TABS ─────────────────────────────────────────────────
 function setTab(nome, btn) {
-  ["novo","lista","importar"].forEach(t => document.getElementById("tab-"+t).style.display = t===nome?"block":"none");
-  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  if (nome==="lista") renderLista();
+  ["novo","lista","importar"].forEach(t=>document.getElementById("tab-"+t).style.display=t===nome?"block":"none");
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active")); btn.classList.add("active");
+  if(nome==="lista") renderLista();
 }
 
-// ══════════════════════════════════════════════
-// FORMULÁRIO
-// ══════════════════════════════════════════════
+// ── FORMULÁRIO ───────────────────────────────────────────
 function onTipoChange() {
-  const tipo = document.getElementById("f-tipo").value;
-  const isComitti = tipo === "Freela do Comitti";
-  const isCrew = tipo === "TVU" || tipo === "LiveU";
-  document.getElementById("campo-crew").style.display = isCrew ? "grid" : "none";
-  document.getElementById("info-comitti").style.display = isComitti ? "block" : "none";
-  const btns = document.getElementById("btns-form");
-  if (isComitti) {
-    btns.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button class="btn" style="background:#e6f1fb;color:#185fa5;border-color:#b5d4f4" onclick="addFila()">+ Adicionar à fila</button>
-      <button class="btn" onclick="addFilaEEnviar()">Adicionar e enviar agora</button>
-    </div>`;
-  } else {
-    btns.innerHTML = `<button class="btn btn-blue" onclick="salvarSingle()">Salvar pedido</button>`;
-  }
+  const tipo=document.getElementById("f-tipo").value;
+  const isC=tipo==="Freela do Comitti", isCrew=tipo==="TVU"||tipo==="LiveU";
+  document.getElementById("campo-crew").style.display=isCrew?"grid":"none";
+  document.getElementById("info-comitti").style.display=isC?"block":"none";
+  document.getElementById("btns-form").innerHTML = isC
+    ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn" style="background:#e6f1fb;color:#185fa5;border-color:#b5d4f4" onclick="addFila()">+ Adicionar à fila</button><button class="btn" onclick="addFilaEEnviar()">Adicionar e enviar agora</button></div>`
+    : `<button class="btn btn-blue" onclick="salvarSingle()">Salvar pedido</button>`;
 }
+function getForm() { return { data:document.getElementById("f-data").value, hora:document.getElementById("f-hora").value, competicao:document.getElementById("f-comp").value, timeCasa:document.getElementById("f-casa").value, timeVisitante:document.getElementById("f-visit").value, tipoCobertura:document.getElementById("f-tipo").value, cinegrafista:document.getElementById("f-cineg")?.value||"", assistente:document.getElementById("f-assist")?.value||"" }; }
+function resetForm() { ["f-data","f-hora","f-cineg","f-assist"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";}); document.getElementById("f-casa").value=""; document.getElementById("f-visit").value=""; document.getElementById("f-tipo").value=TIPOS[0]; document.getElementById("f-comp").value=COMPS[0]; onTipoChange(); }
+function validar(f) { if(!f.data||!f.hora||!f.timeCasa||!f.timeVisitante){flash("Preencha data, hora e times.","err");return false;} if((f.tipoCobertura==="TVU"||f.tipoCobertura==="LiveU")&&!f.cinegrafista){flash("Informe o cinegrafista para TVU/LiveU.","err");return false;} return true; }
+function salvarSingle() { const f=getForm();if(!validar(f))return; pedidos.unshift({...f,id:Date.now(),status:"pendente",criadoEm:new Date().toISOString()}); persist();flash("Pedido salvo!","ok");resetForm();setTab("lista",document.querySelectorAll(".tab")[1]); }
+function addFila() { const f=getForm();if(!validar(f))return; fila.push({...f,id:Date.now(),status:"na_fila",criadoEm:new Date().toISOString()}); persist();renderFila();resetForm();flash(`${f.timeCasa} x ${f.timeVisitante} adicionado à fila.`,"ok"); }
+function addFilaEEnviar() { const f=getForm();if(!validar(f))return; fila.push({...f,id:Date.now(),status:"na_fila",criadoEm:new Date().toISOString()}); persist();resetForm();abrirModal(); }
+function removerDaFila(id) { fila=fila.filter(p=>p.id!==id);persist();renderFila(); }
 
-function getForm() {
-  return {
-    data: document.getElementById("f-data").value,
-    hora: document.getElementById("f-hora").value,
-    competicao: document.getElementById("f-comp").value,
-    timeCasa: document.getElementById("f-casa").value,
-    timeVisitante: document.getElementById("f-visit").value,
-    tipoCobertura: document.getElementById("f-tipo").value,
-    cinegrafista: document.getElementById("f-cineg")?.value||"",
-    assistente: document.getElementById("f-assist")?.value||""
-  };
-}
-function resetForm() {
-  ["f-data","f-hora","f-cineg","f-assist"].forEach(id => { const el=document.getElementById(id); if(el) el.value=""; });
-  document.getElementById("f-casa").value = "";
-  document.getElementById("f-visit").value = "";
-  document.getElementById("f-tipo").value = TIPOS[0];
-  document.getElementById("f-comp").value = COMPS[0];
-  onTipoChange();
-}
-function validar(f) {
-  if (!f.data||!f.hora||!f.timeCasa||!f.timeVisitante) { flash("Preencha data, hora e times.","err"); return false; }
-  if ((f.tipoCobertura==="TVU"||f.tipoCobertura==="LiveU") && !f.cinegrafista) { flash("Informe o cinegrafista para TVU/LiveU.","err"); return false; }
-  return true;
-}
-
-function salvarSingle() {
-  const f = getForm(); if (!validar(f)) return;
-  pedidos.unshift({...f, id:Date.now(), status:"pendente", criadoEm:new Date().toISOString()});
-  persist(); flash("Pedido salvo!","ok"); resetForm();
-  setTab("lista", document.querySelectorAll(".tab")[1]);
-}
-function addFila() {
-  const f = getForm(); if (!validar(f)) return;
-  fila.push({...f, id:Date.now(), status:"na_fila", criadoEm:new Date().toISOString()});
-  persist(); renderFila(); resetForm();
-  flash(`${f.timeCasa} x ${f.timeVisitante} adicionado à fila.`,"ok");
-}
-function addFilaEEnviar() {
-  const f = getForm(); if (!validar(f)) return;
-  fila.push({...f, id:Date.now(), status:"na_fila", criadoEm:new Date().toISOString()});
-  persist(); resetForm(); abrirModal();
-}
-function removerDaFila(id) { fila = fila.filter(p=>p.id!==id); persist(); renderFila(); }
-
-// ══════════════════════════════════════════════
-// EMAIL — Gmail API direto
-// ══════════════════════════════════════════════
+// ── EMAIL ────────────────────────────────────────────────
 function buildCorpo(itens) {
-  const linhas = itens.map((p,i) => `${i+1}. ${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora} | ${p.competicao}\n   ${p.timeCasa} x ${p.timeVisitante}`).join("\n\n");
+  const linhas=itens.map((p,i)=>`${i+1}. ${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora} | ${p.competicao}\n   ${p.timeCasa} x ${p.timeVisitante}`).join("\n\n");
   return `Olá Marcelo,\n\nSeguem os pedidos de cobertura:\n\n${linhas}\n\nPor favor, confirme a disponibilidade para cada jogo.\n\nObrigado,\nEquipe de Redes`;
 }
-
 function abrirModal() {
-  if (!fila.length) return;
-  const assunto = `Pedidos de cobertura – ${fila.length} jogo(s)`;
-  const corpo = buildCorpo(fila);
-  document.getElementById("m-para").textContent = CFG.email_comitti;
-  document.getElementById("m-cc").textContent = CFG.email_cc;
-  document.getElementById("m-assunto").textContent = assunto;
-  document.getElementById("m-corpo").textContent = corpo;
-  document.getElementById("btn-enviar").dataset.assunto = assunto;
-  document.getElementById("btn-enviar").dataset.corpo = corpo;
+  if(!fila.length) return;
+  const assunto=`Pedidos de cobertura – ${fila.length} jogo(s)`, corpo=buildCorpo(fila);
+  document.getElementById("m-para").textContent=cfgEmails.comitti.join(", ")||CFG.email_comitti;
+  document.getElementById("m-cc").textContent=cfgEmails.cc.join(", ")||CFG.email_cc;
+  document.getElementById("m-assunto").textContent=assunto;
+  document.getElementById("m-corpo").textContent=corpo;
+  document.getElementById("btn-enviar").dataset.assunto=assunto;
+  document.getElementById("btn-enviar").dataset.corpo=corpo;
   document.getElementById("modal").classList.add("open");
 }
 function fecharModal() { document.getElementById("modal").classList.remove("open"); }
 
 async function enviarEmail() {
-  const btn = document.getElementById("btn-enviar");
-  btn.disabled = true; btn.textContent = "Enviando...";
-  const assunto = btn.dataset.assunto;
-  const corpo = btn.dataset.corpo;
-
-  const ccList = CFG.email_cc.split(",").map(e=>e.trim()).join(", ");
-  const rawMsg = [
-    `To: ${CFG.email_comitti}`,
-    `Cc: ${ccList}`,
-    `Bcc: ${CFG.email_bcc}`,
-    `Subject: =?utf-8?B?${btoa(unescape(encodeURIComponent(assunto)))}?=`,
-    `Content-Type: text/plain; charset=utf-8`,
-    ``,
-    corpo
-  ].join("\r\n");
-
-  const encoded = btoa(unescape(encodeURIComponent(rawMsg))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
-
+  const btn=document.getElementById("btn-enviar"); btn.disabled=true; btn.textContent="Enviando...";
+  const assunto=btn.dataset.assunto, corpo=btn.dataset.corpo;
+  const para=cfgEmails.comitti.join(",")||CFG.email_comitti;
+  const cc=cfgEmails.cc.join(",")||CFG.email_cc;
+  const bcc=cfgEmails.bcc.join(",")||CFG.email_bcc;
+  const raw=[`To: ${para}`,`Cc: ${cc}`,`Bcc: ${bcc}`,`Subject: =?utf-8?B?${btoa(unescape(encodeURIComponent(assunto)))}?=`,`Content-Type: text/plain; charset=utf-8`,``,corpo].join("\r\n");
+  const encoded=btoa(unescape(encodeURIComponent(raw))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
   try {
-    const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ raw: encoded })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-
-    const enviados = fila.map(p=>({...p, status:"email_enviado"}));
-    pedidos = [...enviados, ...pedidos];
-    fila = [];
-    persist(); renderFila(); fecharModal();
+    const res=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send",{method:"POST",headers:{"Authorization":`Bearer ${accessToken}`,"Content-Type":"application/json"},body:JSON.stringify({raw:encoded})});
+    const data=await res.json(); if(data.error) throw new Error(data.error.message);
+    const enviados=fila.map(p=>({...p,status:"email_enviado"}));
+    pedidos=[...enviados,...pedidos]; fila=[];
+    persist();renderFila();fecharModal();
     flash(`Pedido realizado com sucesso! Email enviado para Marcelo Comitti com ${enviados.length} jogo(s).`,"ok");
-    setTab("lista", document.querySelectorAll(".tab")[1]);
-  } catch(e) {
-    flash("Falha ao enviar: " + e.message, "err");
-  }
-  btn.disabled = false; btn.textContent = "Enviar email";
+    setTab("lista",document.querySelectorAll(".tab")[1]);
+  } catch(e) { flash("Falha ao enviar: "+e.message,"err"); }
+  btn.disabled=false; btn.textContent="Enviar email";
 }
 
-// ══════════════════════════════════════════════
-// IMPORTAR
-// ══════════════════════════════════════════════
+// ── CONFIGURAÇÕES ────────────────────────────────────────
+function carregarConfig() {
+  const s=JSON.parse(localStorage.getItem("ped_cfg3")||"{}");
+  cfgEmails.comitti = s.comitti || CFG.email_comitti.split(",").map(e=>e.trim());
+  cfgEmails.cc      = s.cc      || CFG.email_cc.split(",").map(e=>e.trim());
+  cfgEmails.bcc     = s.bcc     || CFG.email_bcc.split(",").map(e=>e.trim());
+}
+function abrirConfig() { renderCfgLista("comitti"); renderCfgLista("cc"); renderCfgLista("bcc"); document.getElementById("modal-config").classList.add("open"); }
+function fecharConfig() { document.getElementById("modal-config").classList.remove("open"); }
+function renderCfgLista(tipo) {
+  const el=document.getElementById("lista-"+tipo);
+  el.innerHTML = cfgEmails[tipo].length
+    ? cfgEmails[tipo].map((e,i)=>`<div class="email-tag"><span>${e}</span><button class="btn-x" onclick="removerCfgEmail('${tipo}',${i})">×</button></div>`).join("")
+    : `<p style="font-size:13px;color:#aaa;margin-bottom:6px">Nenhum email cadastrado.</p>`;
+}
+function removerCfgEmail(tipo, idx) { cfgEmails[tipo].splice(idx,1); renderCfgLista(tipo); }
+function confirmarNovo(tipo) {
+  const input=document.getElementById("input-novo-"+tipo), val=input.value.trim();
+  if(!val||!val.includes("@")){flash("Informe um email válido.","err");return;}
+  if(cfgEmails[tipo].includes(val)){flash("Este email já está na lista.","err");return;}
+  cfgEmails[tipo].push(val); input.value=""; renderCfgLista(tipo);
+}
+function salvarConfig() {
+  localStorage.setItem("ped_cfg3",JSON.stringify(cfgEmails));
+  fecharConfig(); flash("Configurações salvas!","ok");
+}
+
+// ── IMPORTAR ─────────────────────────────────────────────
 function processarImport() {
-  const texto = document.getElementById("importar-texto").value.trim();
-  if (!texto) return;
-  const linhas = texto.split("\n").map(l=>l.trim()).filter(Boolean);
-  importResult = [];
-  let dataAtual = "";
-  const parseHora = s => { const m=s.match(/(\d{1,2})h(\d{2})?/i)||s.match(/(\d{1,2}):(\d{2})/); return m?`${m[1].padStart(2,"0")}:${(m[2]||"00").padStart(2,"0")}`:""; };
-  const parseDia  = l => { const m=l.match(/DIA\s+(\d{1,2})\/(\d{2})/i); return m?`2026-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`:null; };
-  const detectaTipo = l => { if(/freela.*comitti/i.test(l)) return "Freela do Comitti"; if(/liveu/i.test(l)) return "LiveU"; if(/\btvu\b/i.test(l)) return "TVU"; if(/sem imagens/i.test(l)) return "Sem imagens"; if(/cazé|caze|transmiss/i.test(l)) return "Transmissão CazéTV"; return "Sem imagens"; };
-  const detectaComp = l => { if(/série b|serie b/i.test(l)) return "Brasileirão Série B 2026"; if(/brasileirão|campeonato brasileiro|brasileirao/i.test(l)) return "Brasileirão Série A 2026"; if(/copa do brasil/i.test(l)) return "Copa do Brasil 2026"; if(/libertadores/i.test(l)) return "Copa Libertadores"; if(/sul.americana/i.test(l)) return "Copa Sul-Americana"; return "Brasileirão Série A 2026"; };
-  const extraiTimes = l => { const m=l.match(/\|\s*([^|]+?)\s+[Xx]\s+([^|]+?)(?:\s+(?:freela|liveu|tvu|sem imagens|transmiss|cazé)|$)/i); if(m) return {timeCasa:m[1].replace(/campeonato.*|brasileir.*/gi,"").trim(),timeVisitante:m[2].trim()}; const m2=l.match(/([A-Za-zÀ-ú\s\-]+?)\s+[Xx]\s+([A-Za-zÀ-ú\s\-]+)/i); return m2?{timeCasa:m2[1].trim(),timeVisitante:m2[2].trim()}:{timeCasa:"",timeVisitante:""}; };
-  const extraiNomes = (l, tipo) => {
-    if(tipo==="Freela do Comitti") return {cinegrafista:"",assistente:""};
+  const texto=document.getElementById("importar-texto").value.trim(); if(!texto) return;
+  const linhas=texto.split("\n").map(l=>l.trim()).filter(Boolean); importResult=[]; let dataAtual="";
+  const parseHora=s=>{const m=s.match(/(\d{1,2})h(\d{2})?/i)||s.match(/(\d{1,2}):(\d{2})/);return m?`${m[1].padStart(2,"0")}:${(m[2]||"00").padStart(2,"0")}`:""};
+  const parseDia=l=>{const m=l.match(/DIA\s+(\d{1,2})\/(\d{2})/i);return m?`2026-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`:null};
+  const detectaTipo=l=>{if(/freela.*comitti/i.test(l))return"Freela do Comitti";if(/liveu/i.test(l))return"LiveU";if(/\btvu\b/i.test(l))return"TVU";if(/sem imagens/i.test(l))return"Sem imagens";if(/cazé|caze|transmiss/i.test(l))return"Transmissão CazéTV";return"Sem imagens"};
+  const detectaComp=l=>{if(/série b|serie b/i.test(l))return"Brasileirão Série B 2026";if(/brasileirão|campeonato brasileiro|brasileirao/i.test(l))return"Brasileirão Série A 2026";if(/copa do brasil/i.test(l))return"Copa do Brasil 2026";if(/libertadores/i.test(l))return"Copa Libertadores";if(/sul.americana/i.test(l))return"Copa Sul-Americana";return"Brasileirão Série A 2026"};
+  const extraiTimes=l=>{const m=l.match(/\|\s*([^|]+?)\s+[Xx]\s+([^|]+?)(?:\s+(?:freela|liveu|tvu|sem imagens|transmiss|cazé)|$)/i);if(m)return{timeCasa:m[1].replace(/campeonato.*|brasileir.*/gi,"").trim(),timeVisitante:m[2].trim()};const m2=l.match(/([A-Za-zÀ-ú\s\-]+?)\s+[Xx]\s+([A-Za-zÀ-ú\s\-]+)/i);return m2?{timeCasa:m2[1].trim(),timeVisitante:m2[2].trim()}:{timeCasa:"",timeVisitante:""}};
+  const extraiNomes=(l,tipo)=>{
+    if(tipo==="Freela do Comitti")return{cinegrafista:"",assistente:""};
     let r=l.replace(/freela.*?comitti/i,"").replace(/liveu/i,"").replace(/\btvu\b/i,"").replace(/sem imagens/i,"").replace(/transmissão cazétv|cazétv|caze ?tv/i,"").replace(/\d{1,2}h\d{0,2}/i,"").replace(/\d{1,2}:\d{2}/,"").replace(/brasileirão.*?2026|campeonato brasileiro|copa do brasil|libertadores|sul-americana/gi,"").replace(/\|/g," ").trim();
     ["athletico","atlético-mg","atlético mg","bahia","botafogo","bragantino","chapecoense","corinthians","coritiba","cruzeiro","flamengo","fluminense","fortaleza","grêmio","gremio","internacional","mirassol","palmeiras","remo","santos","são paulo","sao paulo","vasco","vitória","vitoria","red bull bragantino"].forEach(t=>{r=r.replace(new RegExp(t,"gi"),"");});
     r=r.replace(/\s+x\s+/gi," ").replace(/\s{2,}/g," ").trim();
     const p=r.split(/,/).map(s=>s.trim()).filter(Boolean);
-    if(p.length>=2) return {cinegrafista:p[0],assistente:p[1]};
+    if(p.length>=2)return{cinegrafista:p[0],assistente:p[1]};
     const w=r.split(/\s+/).filter(x=>x.length>1&&!/^\d+$/.test(x));
-    return {cinegrafista:w.slice(0,2).join(" "),assistente:w.slice(2,4).join(" ")};
+    return{cinegrafista:w.slice(0,2).join(" "),assistente:w.slice(2,4).join(" ")};
   };
   for(const linha of linhas) {
-    const dia=parseDia(linha); if(dia){dataAtual=dia;continue;}
-    const horaMatch=linha.match(/^(\d{1,2}[h:]\d{0,2})/i);
-    if(!horaMatch&&!linha.includes("|")) continue;
-    const hora=parseHora(horaMatch?.[1]||linha);
-    const tipo=detectaTipo(linha); const comp=detectaComp(linha);
-    const {timeCasa,timeVisitante}=extraiTimes(linha);
-    const {cinegrafista,assistente}=extraiNomes(linha,tipo);
+    const dia=parseDia(linha);if(dia){dataAtual=dia;continue;}
+    const hm=linha.match(/^(\d{1,2}[h:]\d{0,2})/i);
+    if(!hm&&!linha.includes("|"))continue;
+    const hora=parseHora(hm?.[1]||linha),tipo=detectaTipo(linha),comp=detectaComp(linha);
+    const{timeCasa,timeVisitante}=extraiTimes(linha),{cinegrafista,assistente}=extraiNomes(linha,tipo);
     if(timeCasa&&timeVisitante) importResult.push({data:dataAtual,hora,competicao:comp,timeCasa,timeVisitante,tipoCobertura:tipo,cinegrafista,assistente,id:Date.now()+Math.random(),status:"pendente",criadoEm:new Date().toISOString()});
   }
   if(!importResult.length){flash("Nenhum jogo identificado.","err");return;}
   document.getElementById("import-count").textContent=`${importResult.length} jogo(s) identificado(s):`;
-  const items=document.getElementById("import-items"); items.innerHTML="";
-  importResult.forEach(p=>{
-    const tc=pillClass(p.tipoCobertura);
-    items.innerHTML+=`<div class="resultado-item"><span><strong>${p.timeCasa} × ${p.timeVisitante}</strong> <span style="color:#aaa">${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora}${p.cinegrafista?" · "+p.cinegrafista:""}</span></span><span class="pill ${tc}">${p.tipoCobertura}</span></div>`;
-  });
+  const items=document.getElementById("import-items");items.innerHTML="";
+  importResult.forEach(p=>{items.innerHTML+=`<div class="resultado-item"><span><strong>${p.timeCasa} × ${p.timeVisitante}</strong> <span style="color:#aaa">${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora}${p.cinegrafista?" · "+p.cinegrafista:""}</span></span><span class="pill ${pillClass(p.tipoCobertura)}">${p.tipoCobertura}</span></div>`;});
   document.getElementById("import-resultado").style.display="block";
 }
-
 function confirmarImport() {
-  const comitti=importResult.filter(p=>p.tipoCobertura==="Freela do Comitti");
-  const outros=importResult.filter(p=>p.tipoCobertura!=="Freela do Comitti");
-  pedidos=[...outros,...pedidos];
-  fila=[...fila,...comitti];
-  persist(); renderFila(); renderLista(); atualizarBadge();
-  document.getElementById("importar-texto").value="";
-  document.getElementById("import-resultado").style.display="none";
-  importResult=[];
-  if(comitti.length) abrirModal();
-  else flash(`${outros.length} pedido(s) importado(s)!`,"ok");
+  const comitti=importResult.filter(p=>p.tipoCobertura==="Freela do Comitti"),outros=importResult.filter(p=>p.tipoCobertura!=="Freela do Comitti");
+  pedidos=[...outros,...pedidos];fila=[...fila,...comitti];
+  persist();renderFila();renderLista();atualizarBadge();
+  document.getElementById("importar-texto").value="";document.getElementById("import-resultado").style.display="none";importResult=[];
+  if(comitti.length)abrirModal();else flash(`${outros.length} pedido(s) importado(s)!`,"ok");
   setTab("lista",document.querySelectorAll(".tab")[1]);
 }
 
-// ══════════════════════════════════════════════
-// RENDER
-// ══════════════════════════════════════════════
+// ── RENDER ───────────────────────────────────────────────
 function renderFila() {
-  const box=document.getElementById("fila-box");
-  box.style.display=fila.length?"block":"none";
+  const box=document.getElementById("fila-box");box.style.display=fila.length?"block":"none";
   document.getElementById("fila-title").textContent=`${fila.length} jogo(s) na fila para Comitti`;
-  document.getElementById("fila-lista").innerHTML=fila.map(p=>`
-    <div class="fila-item">
-      <div><div class="fila-nome">${p.timeCasa} × ${p.timeVisitante}</div><div class="fila-meta">${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora}</div></div>
-      <button class="btn-x" onclick="removerDaFila(${p.id})">×</button>
-    </div>`).join("");
+  document.getElementById("fila-lista").innerHTML=fila.map(p=>`<div class="fila-item"><div><div class="fila-nome">${p.timeCasa} × ${p.timeVisitante}</div><div class="fila-meta">${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora}</div></div><button class="btn-x" onclick="removerDaFila(${p.id})">×</button></div>`).join("");
 }
-
 function renderLista() {
   const el=document.getElementById("lista-pedidos");
-  const filtrados=pedidos.filter(p=>{
-    if(filtroAtivo==="comitti") return p.tipoCobertura==="Freela do Comitti";
-    if(filtroAtivo==="pendente") return p.status==="pendente";
-    return true;
-  });
+  const filtrados=pedidos.filter(p=>{if(filtroAtivo==="comitti")return p.tipoCobertura==="Freela do Comitti";if(filtroAtivo==="pendente")return p.status==="pendente";return true;});
   if(!filtrados.length){el.innerHTML='<div class="empty">Nenhum pedido encontrado.</div>';return;}
-  el.innerHTML=filtrados.map(p=>`
-    <div class="pedido-card">
-      <div>
-        <div class="pedido-nome">${p.timeCasa} × ${p.timeVisitante}</div>
-        <div class="pedido-meta">${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora} · ${p.competicao}</div>
-        ${p.cinegrafista?`<div class="pedido-crew">Cinegrafista: ${p.cinegrafista}${p.assistente?" · Assistente: "+p.assistente:""}</div>`:""}
-      </div>
-      <div class="badges">
-        <span class="pill ${pillClass(p.tipoCobertura)}">${p.tipoCobertura}</span>
-        ${p.status==="email_enviado"?'<span class="pill pill-ok">Email enviado</span>':""}
-      </div>
-    </div>`).join("");
+  el.innerHTML=filtrados.map(p=>`<div class="pedido-card"><div><div class="pedido-nome">${p.timeCasa} × ${p.timeVisitante}</div><div class="pedido-meta">${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora} · ${p.competicao}</div>${p.cinegrafista?`<div class="pedido-crew">Cinegrafista: ${p.cinegrafista}${p.assistente?" · Assistente: "+p.assistente:""}</div>`:""}</div><div class="badges"><span class="pill ${pillClass(p.tipoCobertura)}">${p.tipoCobertura}</span>${p.status==="email_enviado"?'<span class="pill pill-ok">Email enviado</span>':""}</div></div>`).join("");
 }
+function setFiltro(f,btn){filtroAtivo=f;document.querySelectorAll(".filtro-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");renderLista();}
 
-function setFiltro(f, btn) {
-  filtroAtivo=f;
-  document.querySelectorAll(".filtro-btn").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
-  renderLista();
-}
-
-// ══════════════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════════════
-function persist() {
-  localStorage.setItem("ped_cob4",JSON.stringify(pedidos));
-  localStorage.setItem("ped_fila4",JSON.stringify(fila));
-  atualizarBadge();
-}
-function atualizarBadge() { document.getElementById("badge-total").textContent=`${pedidos.length} pedido${pedidos.length!==1?"s":""}`; }
+// ── UTILS ────────────────────────────────────────────────
+function persist(){localStorage.setItem("ped_cob4",JSON.stringify(pedidos));localStorage.setItem("ped_fila4",JSON.stringify(fila));atualizarBadge();}
+function atualizarBadge(){document.getElementById("badge-total").textContent=`${pedidos.length} pedido${pedidos.length!==1?"s":""}`;}
 function fmtData(d){if(!d)return"";const[y,m,dia]=d.split("-");return`${dia}/${m}/${y}`;}
 function fmtDia(d){if(!d)return"";const[y,m,dia]=d.split("-");return DIAS[new Date(+y,+m-1,+dia).getDay()];}
 function pillClass(tipo){return{"Freela do Comitti":"pill-blue","LiveU":"pill-teal","TVU":"pill-green","Sem imagens":"pill-gray","Transmissão CazéTV":"pill-coral"}[tipo]||"pill-gray";}
