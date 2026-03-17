@@ -608,7 +608,8 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
           <div class="fgrp"><label class="fl">Para (Comitti) *</label><input type="email" class="fc2" id="com-para" value="marcelo@8mmbrasil.com.br" placeholder="comitti@email.com"/></div>
           <div class="fgrp"><label class="fl">CC (editável)</label><input type="text" class="fc2" id="com-cc" placeholder="emails separados por vírgula"/></div>
         </div>
-        <div class="fgrp"><label class="fl">Prévia</label><div class="eprev" id="com-prev"></div></div>
+        <div class="fgrp"><label class="fl">Assunto</label><input type="text" class="fc2" id="com-assunto" placeholder="Assunto do email"/></div>
+        <div class="fgrp"><label class="fl">Mensagem (editável)</label><textarea class="fc2" id="com-prev" rows="10" style="font-family:monospace;font-size:12px;line-height:1.6"></textarea></div>
       </div>
     </div>
     <div class="mf">
@@ -1548,6 +1549,9 @@ function openEnviar(){
   document.getElementById('com-sub').textContent=`${fila.length} pedido(s) na fila`;
   ['cm-data','cm-hora','cm-casa','cm-visit','cm-comp'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('com-para').value='marcelo@8mmbrasil.com.br';
+  // Reset edited flags so default message is applied
+  document.getElementById('com-assunto').dataset.edited='';
+  document.getElementById('com-prev').dataset.edited='';
   const solEmails=fila.map(p=>p.solEmail).filter(Boolean);
   document.getElementById('com-cc').value=buildCcList([...solEmails]).join(', ');
   renderComList(fila);
@@ -1566,15 +1570,30 @@ function renderComList(fila){
       ${p.manual?`<button class="qrm" onclick="removeComExtra(${i-fila.length})" title="Remover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
     </div>`).join(''):'<div style="color:var(--tx3);font-size:13px;padding:10px 0">Nenhum jogo na lista</div>';
 
-  // Build preview
+  // Build default message
   const lines=all.map((p,i)=>{
     const partes=[`${i+1}. ${fd(p.data)}${p.hora?' - '+p.hora:''} | ${p.casa} x ${p.visit}`];
     if(p.comp) partes.push(`   Competição: ${p.comp}`);
-    if(p.tipo) partes.push(`   Tipo: ${p.tipo}`);
-    if(p.solNome) partes.push(`   Solicitante: ${p.solNome}`);
     return partes.join('\n');
   }).join('\n\n');
-  document.getElementById('com-prev').textContent=`Pedidos de Cobertura\n${'═'.repeat(44)}\n\n${lines||'Lista vazia.'}\n\n${'─'.repeat(44)}\nLiveCapture`;
+
+  const defaultSubject=`Pedidos de Cobertura — ${new Date().toLocaleDateString('pt-BR')}`;
+  const defaultBody=`Olá, Marcelo!
+
+Seguem os pedidos de cobertura:
+
+${lines||'(nenhum jogo na lista)'}
+
+${'─'.repeat(44)}
+Qualquer dúvida, entre em contato.
+
+LiveCapture — Gestão de Coberturas`;
+
+  // Only set default if fields are empty (don't overwrite user edits)
+  const subEl=document.getElementById('com-assunto');
+  const bodyEl=document.getElementById('com-prev');
+  if(!subEl.dataset.edited) subEl.value=defaultSubject;
+  if(!bodyEl.dataset.edited) bodyEl.value=defaultBody;
 }
 
 function addJogoComitti(){
@@ -1602,9 +1621,9 @@ function removeComExtra(idx){
 function enviarComitti(){
   const para=document.getElementById('com-para').value.trim();
   const cc=document.getElementById('com-cc').value.trim();
-  const body=document.getElementById('com-prev').textContent;
+  const subject=document.getElementById('com-assunto').value.trim()||'Pedidos de Cobertura — LiveCapture';
+  const body=document.getElementById('com-prev').value;
   if(!para){toast('Informe o email do Comitti','w');return;}
-  const subject='Pedidos de Cobertura — LiveCapture';
 
   withGmailToken(()=>{
     toast('Enviando ao Comitti...','i');
