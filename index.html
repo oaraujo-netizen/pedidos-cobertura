@@ -583,7 +583,26 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
     </div>
     <div class="mb">
       <div class="fg">
-        <div class="fgrp"><label class="fl">Pedidos na fila</label><div class="ql" id="com-list"></div></div>
+        <div class="fgrp"><label class="fl">Jogos na fila</label><div class="ql" id="com-list"></div></div>
+
+        <!-- Adicionar jogo manualmente -->
+        <div style="background:var(--sf2);border:1px solid var(--b);border-radius:var(--rs);padding:14px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3);margin-bottom:10px;font-weight:500">Adicionar jogo manualmente</div>
+          <div class="fg fg2" style="margin-bottom:8px">
+            <div class="fgrp"><label class="fl">Data</label><input type="date" class="fc2" id="cm-data"/></div>
+            <div class="fgrp"><label class="fl">Horário</label><input type="time" class="fc2" id="cm-hora"/></div>
+          </div>
+          <div class="fg fg2" style="margin-bottom:8px">
+            <div class="fgrp"><label class="fl">Time da Casa</label><input type="text" class="fc2" id="cm-casa" placeholder="Ex: Corinthians"/></div>
+            <div class="fgrp"><label class="fl">Time Visitante</label><input type="text" class="fc2" id="cm-visit" placeholder="Ex: Palmeiras"/></div>
+          </div>
+          <div class="fgrp" style="margin-bottom:10px"><label class="fl">Competição</label><input type="text" class="fc2" id="cm-comp" placeholder="Ex: Campeonato Brasileiro"/></div>
+          <button class="btn bgn" onclick="addJogoComitti()" style="width:100%">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar à lista
+          </button>
+        </div>
+
         <hr class="dvd"/>
         <div class="fg fg2">
           <div class="fgrp"><label class="fl">Para (Comitti) *</label><input type="email" class="fc2" id="com-para" placeholder="comitti@email.com"/></div>
@@ -1515,21 +1534,62 @@ function enviarEmailCineg(){
 // ══════════════════════════════════════════════════
 // ENVIAR AO COMITTI
 // ══════════════════════════════════════════════════
+// Jogos adicionados manualmente no modal do Comitti
+let comittiExtras=[];
+
 function openEnviar(){
+  comittiExtras=[];
   const fila=S.pedidos.filter(p=>p.status==='novo').sort((a,b)=>a.data>b.data?1:-1);
-  document.getElementById('com-sub').textContent=`${fila.length} pedido(s) aguardando atribuição`;
-  document.getElementById('com-list').innerHTML=fila.length?fila.map(p=>`
+  document.getElementById('com-sub').textContent=`${fila.length} pedido(s) na fila`;
+  // Clear manual fields
+  ['cm-data','cm-hora','cm-casa','cm-visit','cm-comp'].forEach(id=>document.getElementById(id).value='');
+  renderComList(fila);
+  document.getElementById('m-comitti').classList.add('open');
+}
+
+function renderComList(fila){
+  const all=[...fila.map(p=>({data:p.data,hora:p.hora,casa:p.casa,visit:p.visit,comp:p.comp||'',tipo:p.tipo,solNome:p.solNome,manual:false})),...comittiExtras];
+  document.getElementById('com-sub').textContent=`${all.length} jogo(s) para enviar`;
+  document.getElementById('com-list').innerHTML=all.length?all.map((p,i)=>`
     <div class="qi">
       <div class="qii">
         <div class="qit">${p.casa} x ${p.visit}</div>
-        <div class="qis">${fd(p.data)} ${p.hora} · ${p.tipo} · ${p.solNome||'—'}</div>
+        <div class="qis">${fd(p.data)} ${p.hora||''}${p.comp?' · '+p.comp:''}${p.manual?` <span style="color:var(--ac);font-size:10px">+ manual</span>`:''}</div>
       </div>
-    </div>`).join(''):'<div style="color:var(--tx3);font-size:13px;padding:10px 0">Nenhum pedido novo na fila</div>';
+      ${p.manual?`<button class="qrm" onclick="removeComExtra(${i-fila.length})" title="Remover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
+    </div>`).join(''):'<div style="color:var(--tx3);font-size:13px;padding:10px 0">Nenhum jogo na lista</div>';
 
-  const lines=fila.map((p,i)=>`${i+1}. ${fd(p.data)} - ${p.hora} | ${p.casa} x ${p.visit}\n   Tipo: ${p.tipo} | Solicitante: ${p.solNome||'—'} (${p.nucleo||'—'})\n   ${p.obs?'Obs: '+p.obs:''}`)
-    .join('\n\n');
-  document.getElementById('com-prev').textContent=`Pedidos de Cobertura\n${'═'.repeat(44)}\n\n${lines||'Fila vazia.'}\n\n${'─'.repeat(44)}\nLiveCapture`;
-  document.getElementById('m-comitti').classList.add('open');
+  // Build preview
+  const lines=all.map((p,i)=>{
+    const partes=[`${i+1}. ${fd(p.data)}${p.hora?' - '+p.hora:''} | ${p.casa} x ${p.visit}`];
+    if(p.comp) partes.push(`   Competição: ${p.comp}`);
+    if(p.tipo) partes.push(`   Tipo: ${p.tipo}`);
+    if(p.solNome) partes.push(`   Solicitante: ${p.solNome}`);
+    return partes.join('\n');
+  }).join('\n\n');
+  document.getElementById('com-prev').textContent=`Pedidos de Cobertura\n${'═'.repeat(44)}\n\n${lines||'Lista vazia.'}\n\n${'─'.repeat(44)}\nLiveCapture`;
+}
+
+function addJogoComitti(){
+  const casa=document.getElementById('cm-casa').value.trim();
+  const visit=document.getElementById('cm-visit').value.trim();
+  const data=document.getElementById('cm-data').value;
+  if(!casa||!visit||!data){toast('Preencha data, casa e visitante','w');return;}
+  comittiExtras.push({
+    data, hora:document.getElementById('cm-hora').value,
+    casa, visit, comp:document.getElementById('cm-comp').value.trim(),
+    manual:true
+  });
+  ['cm-data','cm-hora','cm-casa','cm-visit','cm-comp'].forEach(id=>document.getElementById(id).value='');
+  const fila=S.pedidos.filter(p=>p.status==='novo').sort((a,b)=>a.data>b.data?1:-1);
+  renderComList(fila);
+  toast(`${casa} x ${visit} adicionado!`);
+}
+
+function removeComExtra(idx){
+  comittiExtras.splice(idx,1);
+  const fila=S.pedidos.filter(p=>p.status==='novo').sort((a,b)=>a.data>b.data?1:-1);
+  renderComList(fila);
 }
 
 function enviarComitti(){
@@ -1613,11 +1673,12 @@ function parseWa(){
     }
 
     if(casa.length>=2&&visit.length>=2){
-      // Extract competition (text between first | and second |, or first | and teams)
+      // Só importa linhas que têm "Freela do Comitti" ou "Freela Comitti"
+      if(!/freela\s+(do\s+)?comitti/i.test(line)) return;
+
       let comp='';
       const parts=line.split('|');
       if(parts.length>=2) comp=parts[1].trim();
-      if(parts.length>=3) comp=parts[1].trim();
 
       S.waGames.push({date:currentDate, hora, casa, visit, comp});
     }
