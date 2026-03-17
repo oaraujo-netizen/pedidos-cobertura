@@ -1,439 +1,1594 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pedidos de Cobertura</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CoverDesk</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+<!-- Gmail API -->
+<script src="https://accounts.google.com/gsi/client"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; }
-#tela-login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 24px; }
-#tela-login h1 { font-size: 22px; font-weight: 500; }
-#tela-login p { font-size: 14px; color: #888; }
-#tela-app { display: none; }
-.header { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-.header h1 { font-size: 16px; font-weight: 500; }
-.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.user-info { font-size: 13px; color: #888; }
-.btn-link { font-size: 13px; color: #666; background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; }
-.badge { font-size: 12px; background: #e6f1fb; color: #185fa5; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
-.container { max-width: 780px; margin: 0 auto; padding: 24px 16px; }
-.tabs { display: flex; border-bottom: 1px solid #e5e5e5; margin-bottom: 24px; background: #fff; border-radius: 10px 10px 0 0; overflow: hidden; }
-.tab { padding: 12px 20px; font-size: 14px; border: none; background: transparent; cursor: pointer; color: #888; border-bottom: 2px solid transparent; font-weight: 400; }
-.tab.active { color: #1a1a1a; border-bottom: 2px solid #1a1a1a; font-weight: 500; background: #fafaf9; }
-.card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.grid3 { display: grid; grid-template-columns: 1fr 36px 1fr; gap: 8px; align-items: end; }
-.field { display: flex; flex-direction: column; gap: 5px; }
-label { font-size: 13px; color: #666; }
-input[type=text], input[type=email], input[type=date], input[type=time], select { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff; color: #1a1a1a; outline: none; transition: border .15s; }
-input:focus, select:focus { border-color: #999; }
-.sep { text-align: center; font-size: 16px; color: #999; padding-bottom: 2px; }
-.info-box { padding: 10px 14px; border-radius: 8px; font-size: 13px; }
-.info-blue { background: #e6f1fb; color: #185fa5; border: 1px solid #b5d4f4; }
-.btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #1a1a1a; transition: all .15s; }
-.btn:hover { background: #f5f5f3; }
-.btn-blue { background: #185fa5; color: #fff; border-color: #185fa5; }
-.btn-blue:hover { background: #0c447c; }
-.btn-sm { padding: 7px 14px; font-size: 13px; }
-.btn:disabled { opacity: .5; cursor: not-allowed; }
-.fila-box { background: #e6f1fb; border: 1px solid #b5d4f4; border-radius: 10px; padding: 16px; margin-bottom: 20px; }
-.fila-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.fila-title { font-size: 14px; font-weight: 500; color: #185fa5; }
-.fila-item { background: #fff; border: 1px solid #b5d4f4; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-.fila-nome { font-size: 13px; font-weight: 500; color: #185fa5; }
-.fila-meta { font-size: 12px; color: #6ca3d4; margin-top: 2px; }
-.btn-x { background: transparent; border: none; cursor: pointer; color: #aaa; font-size: 18px; padding: 0 4px; line-height: 1; }
-.btn-x:hover { color: #e24b4a; }
-.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
-.modal-bg.open { display: flex; }
-.modal { background: #fff; border-radius: 12px; padding: 24px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
-.modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 16px; }
-.email-preview { background: #f5f5f3; border-radius: 8px; padding: 14px; font-size: 12px; color: #555; line-height: 1.7; white-space: pre-wrap; margin-bottom: 16px; border: 1px solid #e5e5e5; }
-.email-meta { font-size: 13px; color: #888; margin-bottom: 6px; }
-.email-meta span { color: #1a1a1a; }
-.modal-btns { display: flex; gap: 8px; margin-top: 8px; }
-.pedido-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.pedido-nome { font-size: 15px; font-weight: 500; }
-.pedido-meta { font-size: 13px; color: #888; margin-top: 2px; }
-.pedido-crew { font-size: 12px; color: #aaa; margin-top: 4px; }
-.badges { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
-.pill { font-size: 12px; padding: 3px 10px; border-radius: 12px; font-weight: 500; white-space: nowrap; }
-.pill-blue { background: #e6f1fb; color: #185fa5; }
-.pill-teal { background: #e1f5ee; color: #0f6e56; }
-.pill-green { background: #eaf3de; color: #3b6d11; }
-.pill-gray { background: #f1efe8; color: #5f5e5a; }
-.pill-coral { background: #faece7; color: #993c1d; }
-.pill-ok { background: #e1f5ee; color: #0f6e56; }
-.flash { padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; margin-bottom: 14px; display: none; }
-.flash.show { display: block; }
-.flash-ok { background: #e1f5ee; color: #0f6e56; border: 1px solid #9fe1cb; }
-.flash-err { background: #fcebeb; color: #a32d2d; border: 1px solid #f7c1c1; }
-.flash-warn { background: #faeeda; color: #854f0b; border: 1px solid #fac775; }
-.filtros { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
-.filtro-btn { padding: 5px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 1px solid #e5e5e5; background: #fff; color: #888; }
-.filtro-btn.active { border-color: #1a1a1a; color: #1a1a1a; font-weight: 500; }
-.importar-area { width: 100%; min-height: 180px; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #fafaf9; resize: vertical; color: #1a1a1a; }
-.resultado-item { background: #fafaf9; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; border: 1px solid #e5e5e5; gap: 8px; }
-.empty { text-align: center; color: #aaa; font-size: 14px; padding: 40px 0; }
-.cfg-section { margin-bottom: 20px; }
-.cfg-section-title { font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px; }
-.email-tag { display: flex; align-items: center; gap: 8px; background: #f5f5f3; border: 1px solid #e5e5e5; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; }
-.email-tag span { flex: 1; font-size: 13px; color: #1a1a1a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.add-email-row { display: flex; gap: 8px; margin-top: 6px; }
-.add-email-row input { flex: 1; }
-@media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .grid3 { grid-template-columns: 1fr 24px 1fr; } }
+:root{
+  --bg:#0a0c0f;--sf:#111318;--sf2:#1a1d24;--sf3:#22262f;
+  --b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.14);--b3:rgba(255,255,255,0.22);
+  --tx:#f0f2f5;--tx2:#8b92a5;--tx3:#555d70;
+  --ac:#3b82f6;--ac2:#1d6ef5;
+  --gn:#22c55e;--am:#f59e0b;--rd:#ef4444;--pu:#a78bfa;--cy:#06b6d4;--pk:#ec4899;--or:#f97316;
+  --r:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex}
+/* SIDEBAR */
+.sidebar{width:230px;min-height:100vh;background:var(--sf);border-right:1px solid var(--b);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.logo{padding:22px 20px 18px;border-bottom:1px solid var(--b)}
+.logo-mark{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.logo-mark span{color:var(--ac)}
+.logo-sub{font-size:10px;color:var(--tx3);margin-top:2px;letter-spacing:.5px;text-transform:uppercase}
+.nav{flex:1;padding:10px 8px}
+.nl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--tx3);padding:10px 10px 5px}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--rs);color:var(--tx2);cursor:pointer;font-size:13.5px;transition:all .15s;margin-bottom:1px;border:none;background:none;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
+.ni:hover{background:var(--sf2);color:var(--tx)}
+.ni.act{background:rgba(59,130,246,.15);color:var(--ac)}
+.ni svg{width:16px;height:16px;flex-shrink:0}
+.nb{margin-left:auto;background:var(--am);color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1px 6px}
+.nb.blue{background:var(--ac)}
+.sf-foot{padding:12px 8px;border-top:1px solid var(--b)}
+.uc{display:flex;align-items:center;gap:9px;padding:7px 10px}
+.av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.un{font-size:13px;font-weight:500}
+.ur{font-size:10px;color:var(--tx3)}
+.role-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;margin-top:2px}
+.rb-admin{background:rgba(167,139,250,.15);color:var(--pu)}
+.rb-colab{background:rgba(34,197,94,.15);color:var(--gn)}
+/* MAIN */
+.main{flex:1;min-height:100vh;min-width:0;overflow-x:hidden}
+.logged .main{margin-left:230px}
+.topbar{height:58px;border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 26px;gap:12px;background:var(--sf);position:sticky;top:0;z-index:50}
+.tbtitle{font-family:'Syne',sans-serif;font-size:17px;font-weight:700}
+.tbr{margin-left:auto;display:flex;align-items:center;gap:8px}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'DM Sans',sans-serif}
+.bp{background:var(--ac);color:#fff}.bp:hover{background:var(--ac2)}
+.bg{background:transparent;color:var(--tx2);border:1px solid var(--b2)}.bg:hover{background:var(--sf2);color:var(--tx)}
+.bam{background:rgba(245,158,11,.15);color:var(--am);border:1px solid rgba(245,158,11,.3)}.bam:hover{background:rgba(245,158,11,.25)}
+.bgn{background:rgba(34,197,94,.15);color:var(--gn);border:1px solid rgba(34,197,94,.3)}.bgn:hover{background:rgba(34,197,94,.25)}
+.brd{background:rgba(239,68,68,.12);color:var(--rd);border:1px solid rgba(239,68,68,.3)}
+.bpu{background:rgba(167,139,250,.15);color:var(--pu);border:1px solid rgba(167,139,250,.3)}.bpu:hover{background:rgba(167,139,250,.25)}
+.btn svg{width:14px;height:14px}
+/* CONTENT */
+.content{padding:26px;min-width:0;overflow-x:hidden}
+/* STATS */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+.sc{background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc.bl::before{background:var(--ac)}.sc.gn::before{background:var(--gn)}.sc.am::before{background:var(--am)}.sc.pu::before{background:var(--pu)}.sc.or::before{background:var(--or)}
+.sl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx3);margin-bottom:8px}
+.sv{font-family:'Syne',sans-serif;font-size:30px;font-weight:700;line-height:1}
+.ss{font-size:11px;color:var(--tx3);margin-top:5px}
+/* BANNER */
+.banner{border-radius:var(--r);padding:14px 18px;margin-bottom:22px;display:flex;align-items:center;gap:14px}
+.banner.am{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25)}
+.banner.gn{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25)}
+.banner.bl{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25)}
+.bi{flex:1}
+.bt{font-weight:600;font-size:14px;margin-bottom:2px}
+.bsub{font-size:12px;color:var(--tx2)}
+/* SECTION */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.stitle{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+/* FILTERS */
+.filt{display:flex;gap:7px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.fc{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--b2);background:transparent;color:var(--tx2);transition:all .15s;font-family:'DM Sans',sans-serif}
+.fc:hover,.fc.act{background:var(--ac);border-color:var(--ac);color:#fff}
+.si{padding:7px 13px;border-radius:var(--rs);border:1px solid var(--b2);background:var(--sf2);color:var(--tx);font-size:13px;font-family:'DM Sans',sans-serif;width:200px;margin-left:auto}
+.si:focus{outline:none;border-color:var(--ac)}
+.si::placeholder{color:var(--tx3)}
+/* TABLE */
+.tw{background:var(--sf);border:1px solid var(--b);border-radius:var(--r);overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:580px}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:1px solid var(--b)}
+thead th{padding:11px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx3);font-weight:500}
+tbody tr{border-bottom:1px solid var(--b);transition:background .1s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--sf2)}
+tbody td{padding:12px 14px;font-size:13px;vertical-align:middle}
+.qr{background:rgba(245,158,11,.04)!important}.qr:hover{background:rgba(245,158,11,.08)!important}
+.tr3{background:rgba(239,68,68,.04)!important}.tr3:hover{background:rgba(239,68,68,.08)!important}
+/* BADGES */
+.sb{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.sb::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.s-novo{background:rgba(59,130,246,.12);color:var(--ac)}
+.s-atrib{background:rgba(245,158,11,.12);color:var(--am)}
+.s-conf{background:rgba(34,197,94,.15);color:var(--gn)}
+.s-conc{background:rgba(167,139,250,.15);color:var(--pu)}
+.s-terc{background:rgba(239,68,68,.12);color:var(--rd)}
+.s-env{background:rgba(6,182,212,.12);color:var(--cy)}
+.tb{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:var(--rs);font-size:11px;font-weight:500}
+.tV{background:rgba(59,130,246,.12);color:var(--ac)}
+.tF{background:rgba(6,182,212,.12);color:var(--cy)}
+.tD{background:rgba(167,139,250,.12);color:var(--pu)}
+.tC{background:rgba(236,72,153,.12);color:var(--pk)}
+.tG{background:rgba(34,197,94,.12);color:var(--gn)}
+.tT{background:rgba(245,158,11,.12);color:var(--am)}
+.tL{background:rgba(239,68,68,.12);color:var(--rd)}
+.pc{display:flex;align-items:center;gap:7px}
+.mav{width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.ab{display:flex;gap:4px}
+.ib{width:28px;height:28px;border-radius:var(--rs);border:1px solid var(--b);background:transparent;color:var(--tx2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.ib:hover{background:var(--sf2);color:var(--tx);border-color:var(--b2)}
+.ib svg{width:12px;height:12px}
+/* EQUIPE */
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pcard{background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:16px;transition:border-color .15s}
+.pcard:hover{border-color:var(--b2)}
+.pch{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.pav{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff}
+.pn{font-weight:600;font-size:13px}
+.pr{font-size:11px;color:var(--tx3);margin-top:1px}
+.pst{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ps{background:var(--sf2);border-radius:var(--rs);padding:7px;text-align:center}
+.psv{font-size:16px;font-weight:700;font-family:'Syne',sans-serif}
+.psl{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(5px);z-index:200;display:flex;align-items:center;justify-content:center;padding:18px;opacity:0;visibility:hidden;transition:all .2s}
+.mo.open{opacity:1;visibility:visible}
+.md{background:var(--sf);border:1px solid var(--b2);border-radius:16px;width:100%;max-width:600px;max-height:92vh;overflow-y:auto;transform:translateY(14px);transition:transform .2s}
+.mo.open .md{transform:translateY(0)}
+.mdlg{max-width:740px}
+.mh{padding:22px 22px 0;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+.mtitle{font-family:'Syne',sans-serif;font-size:19px;font-weight:700}
+.msub{font-size:12px;color:var(--tx2);margin-top:3px}
+.xcl{width:30px;height:30px;border-radius:var(--rs);border:1px solid var(--b);background:transparent;color:var(--tx2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:15px}
+.xcl:hover{background:var(--sf2)}
+.mb{padding:0 22px 6px}
+.mf{padding:14px 22px 22px;display:flex;gap:9px;justify-content:flex-end;border-top:1px solid var(--b);margin-top:14px}
+/* FORM */
+.fg{display:grid;gap:13px}
+.fg2{grid-template-columns:1fr 1fr}
+.fg3{grid-template-columns:1fr 1fr 1fr}
+.fgrp{display:flex;flex-direction:column;gap:5px}
+.fl{font-size:11px;font-weight:500;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px}
+.fc2{padding:9px 13px;border-radius:var(--rs);border:1px solid var(--b2);background:var(--sf2);color:var(--tx);font-size:14px;font-family:'DM Sans',sans-serif;transition:border-color .15s}
+.fc2:focus{outline:none;border-color:var(--ac)}
+.fc2::placeholder{color:var(--tx3)}
+select.fc2 option{background:var(--sf2)}
+textarea.fc2{resize:vertical}
+.tg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.to{border:1px solid var(--b2);border-radius:var(--rs);padding:9px 6px;text-align:center;cursor:pointer;transition:all .15s;background:transparent;color:var(--tx2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500}
+.to:hover{border-color:var(--ac);color:var(--tx)}
+.to.sel{border-color:var(--ac);background:rgba(59,130,246,.15);color:var(--ac)}
+.to-ic{font-size:16px;margin-bottom:3px;display:block}
+/* ATRIBUIÇÃO */
+.assign-box{background:var(--sf2);border:1px solid var(--b);border-radius:var(--rs);padding:14px;margin-bottom:6px}
+.assign-title{font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.arrival-badge{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);border-radius:var(--rs);padding:10px 14px;display:flex;align-items:center;gap:10px;margin-top:8px}
+.arrival-time{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--gn)}
+.arrival-label{font-size:12px;color:var(--tx2)}
+/* PRICE TABLE */
+.ptable{border-radius:var(--rs);overflow:hidden;border:1px solid var(--b)}
+.ptr{display:grid;border-bottom:1px solid var(--b)}
+.ptr:last-child{border-bottom:none}
+.ptr.head{background:var(--sf3);font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx3)}
+.ptc{padding:10px 12px;font-size:13px}
+/* OUTSOURCE RESULT */
+.ores{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:var(--rs);padding:14px}
+.ores-price{font-family:'Syne',sans-serif;font-size:28px;font-weight:700;color:var(--rd)}
+.ores-detail{font-size:12px;color:var(--tx2);margin-top:4px}
+/* EMAIL PREVIEW */
+.eprev{background:var(--sf2);border:1px solid var(--b);border-radius:var(--rs);padding:13px;font-size:12px;color:var(--tx2);font-family:monospace;line-height:1.7;white-space:pre-wrap;max-height:220px;overflow-y:auto}
+/* WA */
+.wata{background:var(--sf2);border:1px solid var(--b2);border-radius:var(--rs);padding:11px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--tx);width:100%;resize:vertical;min-height:140px}
+.wata:focus{outline:none;border-color:var(--ac)}
+.wgl{display:flex;flex-direction:column;gap:5px;max-height:230px;overflow-y:auto}
+.wg{background:var(--sf2);border:1px solid var(--b);border-radius:var(--rs);padding:9px 11px;display:flex;align-items:center;gap:9px;cursor:pointer;transition:all .15s}
+.wg:hover{border-color:var(--ac)}
+.wg.sel{border-color:var(--gn);background:rgba(34,197,94,.06)}
+.wck{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--b2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.wg.sel .wck{background:var(--gn);border-color:var(--gn)}
+.wck svg{width:10px;height:10px;color:#fff}
+/* QUEUE */
+.ql{display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto}
+.qi{background:var(--sf2);border:1px solid var(--b);border-radius:var(--rs);padding:11px 13px;display:flex;align-items:center;gap:10px}
+.qii{flex:1}
+.qit{font-size:13px;font-weight:600}
+.qis{font-size:11px;color:var(--tx3);margin-top:1px}
+.qrm{border:none;background:transparent;color:var(--tx3);cursor:pointer;padding:3px;border-radius:4px;display:flex;align-items:center}
+.qrm:hover{color:var(--rd);background:rgba(239,68,68,.1)}
+.qrm svg{width:13px;height:13px}
+/* EMPTY */
+.es{text-align:center;padding:50px 20px;color:var(--tx3)}
+.ei{font-size:36px;margin-bottom:10px;display:block}
+.et{font-size:14px;font-weight:500;color:var(--tx2);margin-bottom:5px}
+/* VIEWS */
+.view{display:none}.view.act{display:block}
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--sf3);border:1px solid var(--b2);border-radius:var(--r);padding:12px 16px;font-size:13px;font-weight:500;color:var(--tx);display:flex;align-items:center;gap:9px;z-index:999;transform:translateY(55px);opacity:0;transition:all .3s cubic-bezier(.175,.885,.32,1.275);max-width:300px;box-shadow:0 8px 28px rgba(0,0,0,.45)}
+.toast.show{transform:translateY(0);opacity:1}
+.ti2{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:700}
+.ts .ti2{background:rgba(34,197,94,.2);color:var(--gn)}
+.tw2 .ti2{background:rgba(245,158,11,.2);color:var(--am)}
+.ti .ti2{background:rgba(59,130,246,.2);color:var(--ac)}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--sf3);border-radius:3px}
+.dvd{border:none;border-top:1px solid var(--b);margin:14px 0}
+/* LOGIN */
+#login{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center}
+.sidebar{display:none!important}
+.main{display:none!important}
+.logged .sidebar{display:flex!important}
+.logged .main{display:block!important}
+/* ANIM */
+@keyframes ri{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+tbody tr{animation:ri .18s ease both}
+tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:30ms}tbody tr:nth-child(3){animation-delay:60ms}tbody tr:nth-child(4){animation-delay:90ms}tbody tr:nth-child(5){animation-delay:120ms}
+/* INFO ROW */
+.irow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.itag{font-size:11px;color:var(--tx3);padding:2px 8px;border-radius:20px;border:1px solid var(--b);background:var(--sf2)}
+@media(max-width:900px){.sidebar{display:none}.main{margin-left:0}.sg{grid-template-columns:repeat(2,1fr)}.pg{grid-template-columns:1fr}.tg{grid-template-columns:repeat(2,1fr)}.fg2,.fg3{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<script>
-const CFG = {
-  google_client_id: "699539167023-8tqk6tfge8uf3ejd6cmiudql27bctd2a.apps.googleusercontent.com",
-  email_comitti: "marcelo@8mmbrasil.com.br",
-  email_cc: "sstamm@livemode.com,bcoutinho@livemode.com,inovello@livemode.com",
-  email_bcc: "oaraujo@livemode.com"
-};
-</script>
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">Cover<span>Desk</span></div>
+    <div class="logo-sub">Gestão de Coberturas</div>
+  </div>
+  <nav class="nav">
+    <div class="nl">Menu</div>
+    <button class="ni act" onclick="goView('dash',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+    <button class="ni" onclick="goView('pedidos',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Pedidos
+      <span class="nb" id="nb-ped" style="display:none">0</span>
+    </button>
+    <button class="ni admin-only" onclick="goView('equipe',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Equipe
+    </button>
+    <button class="ni admin-only" onclick="goView('precos',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Tabela de Preços
+    </button>
+    <button class="ni admin-only" onclick="goView('hist',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Histórico
+    </button>
+  </nav>
+  <div class="sf-foot">
+    <div class="uc">
+      <div class="av" id="sb-av">?</div>
+      <div>
+        <div class="un" id="sb-nm">—</div>
+        <div id="sb-role"></div>
+      </div>
+    </div>
+    <button class="btn bg" style="width:100%;margin-top:7px;font-size:12px" onclick="signOut()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sair
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="topbar">
+    <div class="tbtitle" id="pg-title">Dashboard</div>
+    <div class="tbr">
+      <button class="btn bg admin-only" onclick="openWa()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Importar texto
+      </button>
+      <button class="btn bg admin-only" onclick="openEnviar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Enviar ao Comitti
+      </button>
+      <button class="btn bp" onclick="openNovo()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo Pedido
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="view act" id="view-dash">
+      <div class="sg" id="sg-admin">
+        <div class="sc am"><div class="sl">Novos Pedidos</div><div class="sv" id="st-novo">0</div><div class="ss">Aguardando atribuição</div></div>
+        <div class="sc bl"><div class="sl">Atribuídos</div><div class="sv" id="st-atrib">0</div><div class="ss">Cinegrafista definido</div></div>
+        <div class="sc gn"><div class="sl">Confirmados</div><div class="sv" id="st-conf">0</div><div class="ss">Email enviado</div></div>
+        <div class="sc or"><div class="sl">Terceirizados</div><div class="sv" id="st-terc">0</div><div class="ss">Fora de casa</div></div>
+      </div>
+      <div class="sg" id="sg-colab" style="display:none">
+        <div class="sc am"><div class="sl">Meus Pedidos</div><div class="sv" id="st-meus">0</div><div class="ss">Total enviado</div></div>
+        <div class="sc bl"><div class="sl">Em Andamento</div><div class="sv" id="st-mand">0</div><div class="ss">Atribuídos/confirmados</div></div>
+        <div class="sc gn"><div class="sl">Concluídos</div><div class="sv" id="st-mconc">0</div><div class="ss">Coberturas feitas</div></div>
+        <div class="sc pu"><div class="sl">Terceirizados</div><div class="sv" id="st-mterc">0</div><div class="ss">Dos meus pedidos</div></div>
+      </div>
+
+      <div class="banner am" id="banner-novos" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--am)" stroke-width="2" style="width:20px;height:20px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div class="bi"><div class="bt" id="banner-novos-t" style="color:var(--am)">Pedidos aguardando atribuição</div><div class="bsub">Acesse Pedidos para definir os cinegrafistas e enviar os emails</div></div>
+        <button class="btn bam" onclick="goView('pedidos',null);setFilt('novo',null)">Ver pendentes</button>
+      </div>
+
+      <div class="sh"><div class="stitle">Próximos eventos</div></div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Evento</th><th>Data / Hora</th><th>Tipo</th><th>Cinegrafista</th><th>Status</th></tr></thead>
+          <tbody id="dash-tb"></tbody>
+        </table>
+        <div id="dash-empty" class="es" style="display:none"><span class="ei">🎬</span><div class="et">Nenhum pedido ainda</div><div>Clique em "Novo Pedido" para começar</div></div>
+      </div>
+    </div>
+
+    <!-- PEDIDOS -->
+    <div class="view" id="view-pedidos">
+      <div class="filt">
+        <button class="fc act" onclick="setFilt('todos',this)">Todos</button>
+        <button class="fc" onclick="setFilt('novo',this)">Novos</button>
+        <button class="fc admin-only" onclick="setFilt('atrib',this)">Atribuídos</button>
+        <button class="fc" onclick="setFilt('conf',this)">Confirmados</button>
+        <button class="fc admin-only" onclick="setFilt('terc',this)">Terceirizados</button>
+        <button class="fc" onclick="setFilt('conc',this)">Concluídos</button>
+        <input class="si" type="text" placeholder="Buscar evento..." id="si" oninput="renderPed()"/>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Evento</th><th>Data / Hora</th><th>Tipo</th><th>Solicitante</th><th>Cinegrafista</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="ped-tb"></tbody>
+        </table>
+        <div id="ped-empty" class="es" style="display:none"><span class="ei">📋</span><div class="et">Nenhum pedido encontrado</div></div>
+      </div>
+    </div>
+
+    <!-- EQUIPE -->
+    <div class="view" id="view-equipe">
+      <div class="sh">
+        <div class="stitle">Cinegrafistas</div>
+        <button class="btn bp" onclick="openEditCineg(null)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar
+        </button>
+      </div>
+      <div class="pg" id="gc" style="margin-bottom:24px"></div>
+      <div class="sh"><div class="stitle">Assistentes</div></div>
+      <div class="pg" id="ga"></div>
+    </div>
+
+    <!-- PREÇOS -->
+    <div class="view" id="view-precos">
+      <div class="sh">
+        <div class="stitle">Tabela de Preços — Terceirização</div>
+        <button class="btn bp" onclick="openNovoPreco()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar preço
+        </button>
+      </div>
+      <div style="font-size:13px;color:var(--tx2);margin-bottom:16px">Os preços são consultados automaticamente quando um pedido for marcado como terceirização. Valor base por tipo de cobertura, ajustado por cidade e duração.</div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Tipo</th><th>Cidade / Região</th><th>Duração</th><th>Nº Profissionais</th><th>Valor Base (R$)</th><th>Ações</th></tr></thead>
+          <tbody id="prec-tb"></tbody>
+        </table>
+        <div id="prec-empty" class="es" style="display:none"><span class="ei">💰</span><div class="et">Tabela vazia</div><div>Adicione preços para calcular custos de terceirização automaticamente</div></div>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="view" id="view-hist">
+      <div class="sh"><div class="stitle">Histórico</div></div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Evento</th><th>Data</th><th>Tipo</th><th>Cinegrafista</th><th>Solicitante</th><th>Status</th></tr></thead>
+          <tbody id="hist-tb"></tbody>
+        </table>
+        <div id="hist-empty" class="es" style="display:none"><span class="ei">🕐</span><div class="et">Histórico vazio</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 <!-- LOGIN -->
-<div id="tela-login">
-  <h1>Pedidos de Cobertura</h1>
-  <p>Entre com sua conta Google para continuar</p>
-  <div id="btn-google-login"></div>
-</div>
-
-<!-- APP -->
-<div id="tela-app">
-  <div class="header">
-    <h1>Pedidos de Cobertura</h1>
-    <div class="header-right">
-      <span class="user-info" id="user-name"></span>
-      <span class="badge" id="badge-total">0 pedidos</span>
-      <button class="btn-link" onclick="abrirConfig()">⚙ Configurações</button>
-      <button class="btn-link" onclick="logout()">Sair</button>
+<div id="login">
+  <div style="text-align:center;max-width:380px;padding:20px">
+    <div class="logo-mark" style="font-size:34px;margin-bottom:7px">Cover<span>Desk</span></div>
+    <div style="font-size:14px;color:var(--tx2);margin-bottom:5px">Gestão Integrada de Coberturas</div>
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:32px">Acesso exclusivo para <strong style="color:var(--ac)">@livemode.com</strong></div>
+    <div id="login-error" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:var(--rs);padding:10px 14px;font-size:13px;color:var(--rd);margin-bottom:16px;text-align:left"></div>
+    <div id="g_id_onload" data-client_id="YOUR_GOOGLE_CLIENT_ID" data-callback="googleLogin" data-auto_prompt="false"></div>
+    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="filled_black" data-shape="pill" data-logo_alignment="left"></div>
+    <div style="margin:16px 0;font-size:12px;color:var(--tx3)">— ou entre em modo demo —</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="demoLogin('admin')" class="btn bg" style="flex:1;padding:10px;justify-content:center">
+        👤 Admin (Você/Sergio)
+      </button>
+      <button onclick="demoLogin('colab')" class="btn bg" style="flex:1;padding:10px;justify-content:center">
+        🎬 Colaborador
+      </button>
     </div>
-  </div>
-
-  <div class="container">
-    <div id="flash" class="flash"></div>
-
-    <div class="fila-box" id="fila-box" style="display:none">
-      <div class="fila-header">
-        <span class="fila-title" id="fila-title">0 jogo(s) na fila para Comitti</span>
-        <button class="btn btn-blue btn-sm" onclick="abrirModal()">Enviar tudo</button>
-      </div>
-      <div id="fila-lista"></div>
-    </div>
-
-    <div class="tabs">
-      <button class="tab active" onclick="setTab('novo',this)">+ Novo pedido</button>
-      <button class="tab" onclick="setTab('lista',this)">Lista</button>
-      <button class="tab" onclick="setTab('importar',this)">Importar WhatsApp</button>
-    </div>
-
-    <div id="tab-novo">
-      <div class="card" style="display:grid;gap:14px">
-        <div class="grid2">
-          <div class="field"><label>Data *</label><input type="date" id="f-data"></div>
-          <div class="field"><label>Horário *</label><input type="time" id="f-hora"></div>
-        </div>
-        <div class="field"><label>Competição</label><select id="f-comp"></select></div>
-        <div class="grid3">
-          <div class="field"><label>Time da casa *</label><select id="f-casa"></select></div>
-          <div class="sep">×</div>
-          <div class="field"><label>Time visitante *</label><select id="f-visit"></select></div>
-        </div>
-        <div class="field"><label>Tipo de cobertura</label><select id="f-tipo" onchange="onTipoChange()"></select></div>
-        <div id="campo-crew" style="display:none" class="grid2">
-          <div class="field"><label>Cinegrafista *</label><input type="text" id="f-cineg" placeholder="Nome do cinegrafista"></div>
-          <div class="field"><label>Assistente <small>(opcional)</small></label><input type="text" id="f-assist" placeholder="Nome do assistente"></div>
-        </div>
-        <div id="info-comitti" class="info-box info-blue" style="display:none">Email será enviado para Marcelo Comitti ao confirmar.</div>
-        <div id="btns-form"></div>
-      </div>
-    </div>
-
-    <div id="tab-lista" style="display:none">
-      <div class="filtros">
-        <button class="filtro-btn active" onclick="setFiltro('todos',this)">Todos</button>
-        <button class="filtro-btn" onclick="setFiltro('comitti',this)">Comitti</button>
-        <button class="filtro-btn" onclick="setFiltro('pendente',this)">Pendentes</button>
-      </div>
-      <div id="lista-pedidos"></div>
-    </div>
-
-    <div id="tab-importar" style="display:none">
-      <div class="card" style="display:grid;gap:14px">
-        <p style="font-size:14px;color:#888">Cole a lista recebida pelo WhatsApp. O sistema identifica os jogos automaticamente.</p>
-        <textarea class="importar-area" id="importar-texto" placeholder="QUARTA, DIA 18/03&#10;19h Campeonato Brasileiro | Palmeiras x Botafogo Freela do Comitti Alan Gouveia&#10;21h30 Campeonato Brasileiro | Vasco x Fluminense LiveU Jotave&#10;..."></textarea>
-        <button class="btn btn-blue" onclick="processarImport()">Processar lista</button>
-        <div id="import-resultado" style="display:none">
-          <p style="font-size:14px;font-weight:500;margin-bottom:10px" id="import-count"></p>
-          <div id="import-items"></div>
-          <button class="btn btn-blue" style="margin-top:12px" onclick="confirmarImport()">Salvar e preparar email</button>
-        </div>
-      </div>
-    </div>
+    <div style="margin-top:12px;font-size:10px;color:var(--tx3)">Dados salvos localmente no navegador</div>
   </div>
 </div>
 
-<!-- MODAL CONFIGURAÇÕES -->
-<div class="modal-bg" id="modal-config">
-  <div class="modal" style="max-width:560px">
-    <h2>Configurações de email</h2>
-
-    <div class="cfg-section">
-      <p class="cfg-section-title">Email do Comitti (Para:)</p>
-      <div id="lista-comitti"></div>
-      <div class="add-email-row">
-        <input type="email" id="input-novo-comitti" placeholder="novo@email.com" onkeydown="if(event.key==='Enter')confirmarNovo('comitti')">
-        <button class="btn btn-blue btn-sm" onclick="confirmarNovo('comitti')">Adicionar</button>
+<!-- ═══ MODAL: NOVO PEDIDO ═══ -->
+<div class="mo" id="m-novo">
+  <div class="md">
+    <div class="mh">
+      <div><div class="mtitle" id="mn-title">Novo Pedido de Cobertura</div><div class="msub">Preencha os dados do evento</div></div>
+      <button class="xcl" onclick="closeM('m-novo')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <!-- SOLICITANTE -->
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Seu nome *</label><input type="text" class="fc2" id="f-solnom" placeholder="Nome completo"/></div>
+          <div class="fgrp"><label class="fl">Núcleo responsável *</label><input type="text" class="fc2" id="f-nucleo" placeholder="Ex: Esporte, Jornalismo..."/></div>
+        </div>
+        <div class="fgrp"><label class="fl">Email de contato</label><input type="email" class="fc2" id="f-solem" placeholder="seu@email.com"/></div>
+        <hr class="dvd"/>
+        <!-- EVENTO -->
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Data *</label><input type="date" class="fc2" id="f-data"/></div>
+          <div class="fgrp"><label class="fl">Horário do jogo *</label><input type="time" class="fc2" id="f-hora" oninput="calcChegada()"/></div>
+        </div>
+        <div class="fgrp"><label class="fl">Competição / Evento</label><input type="text" class="fc2" id="f-comp" placeholder="Campeonato Paulista, Copa SP..."/></div>
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Time da Casa *</label><input type="text" class="fc2" id="f-casa" placeholder="Nome do time"/></div>
+          <div class="fgrp"><label class="fl">Time Visitante *</label><input type="text" class="fc2" id="f-visit" placeholder="Nome do time"/></div>
+        </div>
+        <div class="fgrp">
+          <label class="fl">Tipo de Cobertura *</label>
+          <div class="tg" style="grid-template-columns:repeat(2,1fr)">
+            <button class="to" onclick="selTipo('Eng Completa',this)"><span class="to-ic">🎬</span>Eng Completa</button>
+            <button class="to" onclick="selTipo('ENG',this)"><span class="to-ic">🎥</span>ENG</button>
+            <button class="to" onclick="selTipo('Drone',this)"><span class="to-ic">🚁</span>Drone</button>
+            <button class="to" onclick="selTipo('Gravação',this)"><span class="to-ic">📹</span>Gravação</button>
+            <button class="to" onclick="selTipo('TVU',this)"><span class="to-ic">📡</span>TVU</button>
+            <button class="to" onclick="selTipo('LiveU',this)"><span class="to-ic">🔴</span>LiveU</button>
+          </div>
+        </div>
+        <hr class="dvd"/>
+        <!-- PRODUTOR / REPÓRTER -->
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Nome do Produtor</label><input type="text" class="fc2" id="f-prodnm" placeholder="Nome"/></div>
+          <div class="fgrp"><label class="fl">Contato do Produtor</label><input type="text" class="fc2" id="f-prodct" placeholder="(11) 99999-9999 ou email"/></div>
+        </div>
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Nome do Repórter</label><input type="text" class="fc2" id="f-repnm" placeholder="Nome"/></div>
+          <div class="fgrp"><label class="fl">Contato do Repórter</label><input type="text" class="fc2" id="f-repct" placeholder="(11) 99999-9999 ou email"/></div>
+        </div>
+        <div class="fgrp"><label class="fl">Observações</label><textarea class="fc2" id="f-obs" rows="2" placeholder="Local, acesso, equipamentos..."></textarea></div>
       </div>
     </div>
-
-    <div class="cfg-section">
-      <p class="cfg-section-title">Emails em cópia (CC)</p>
-      <div id="lista-cc"></div>
-      <div class="add-email-row">
-        <input type="email" id="input-novo-cc" placeholder="novo@email.com" onkeydown="if(event.key==='Enter')confirmarNovo('cc')">
-        <button class="btn btn-blue btn-sm" onclick="confirmarNovo('cc')">Adicionar</button>
-      </div>
-    </div>
-
-    <div class="cfg-section">
-      <p class="cfg-section-title">Email cópia oculta (BCC)</p>
-      <div id="lista-bcc"></div>
-      <div class="add-email-row">
-        <input type="email" id="input-novo-bcc" placeholder="novo@email.com" onkeydown="if(event.key==='Enter')confirmarNovo('bcc')">
-        <button class="btn btn-blue btn-sm" onclick="confirmarNovo('bcc')">Adicionar</button>
-      </div>
-    </div>
-
-    <div class="modal-btns">
-      <button class="btn btn-blue" onclick="salvarConfig()">Salvar</button>
-      <button class="btn" onclick="fecharConfig()">Cancelar</button>
+    <div class="mf">
+      <button class="btn bg" onclick="closeM('m-novo')">Cancelar</button>
+      <button class="btn bam" id="btn-mais" onclick="saveP(true)">+ Salvar e adicionar outro</button>
+      <button class="btn bp" onclick="saveP(false)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg>
+        Enviar pedido
+      </button>
     </div>
   </div>
 </div>
 
-<!-- MODAL EMAIL -->
-<div class="modal-bg" id="modal">
-  <div class="modal">
-    <h2>Confirmar envio para Marcelo Comitti</h2>
-    <div class="email-meta">Para: <span id="m-para"></span></div>
-    <div class="email-meta">CC: <span id="m-cc"></span></div>
-    <div class="email-meta">Assunto: <span id="m-assunto"></span></div>
-    <div class="email-preview" id="m-corpo"></div>
-    <div class="modal-btns">
-      <button class="btn btn-blue" id="btn-enviar" onclick="enviarEmail()">Enviar email</button>
-      <button class="btn" onclick="fecharModal()">Cancelar</button>
+<!-- ═══ MODAL: ATRIBUIR CINEGRAFISTA (ADMIN) ═══ -->
+<div class="mo" id="m-atrib">
+  <div class="md">
+    <div class="mh">
+      <div><div class="mtitle">Atribuir Cobertura</div><div class="msub" id="atrib-sub">—</div></div>
+      <button class="xcl" onclick="closeM('m-atrib')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <!-- info do pedido -->
+        <div class="assign-box">
+          <div class="assign-title">Dados do Pedido</div>
+          <div id="atrib-info"></div>
+        </div>
+        <div class="fgrp">
+          <label class="fl">Cinegrafista *</label>
+          <select class="fc2" id="a-cineg" onchange="calcChegadaAtrib()"></select>
+        </div>
+        <div class="fgrp">
+          <label class="fl">Assistente (opcional)</label>
+          <select class="fc2" id="a-assist"></select>
+        </div>
+        <!-- HORÁRIO DE CHEGADA -->
+        <div class="arrival-badge" id="arrival-badge" style="display:none">
+          <div>
+            <div class="arrival-label">⏰ Horário de chegada (3h antes do jogo)</div>
+            <div class="arrival-time" id="arrival-time">—</div>
+            <div style="font-size:11px;color:var(--tx2);margin-top:2px" id="arrival-date"></div>
+          </div>
+        </div>
+        <hr class="dvd"/>
+        <!-- TERCEIRIZAR -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+          <input type="checkbox" id="chk-terc" onchange="toggleTerc()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--rd)"/>
+          <label for="chk-terc" style="font-size:13px;cursor:pointer;color:var(--tx2)">Não temos disponibilidade — <strong style="color:var(--rd)">Terceirizar</strong></label>
+        </div>
+        <div id="terc-section" style="display:none">
+          <div class="fg fg2" style="margin-top:8px">
+            <div class="fgrp"><label class="fl">Cidade / Região</label><input type="text" class="fc2" id="t-cidade" placeholder="São Paulo, RJ..." oninput="calcTerc()"/></div>
+            <div class="fgrp"><label class="fl">Duração estimada (h)</label><input type="number" class="fc2" id="t-dur" placeholder="4" min="1" max="12" oninput="calcTerc()"/></div>
+          </div>
+          <div class="fgrp" style="margin-top:8px"><label class="fl">Nº de profissionais</label>
+            <select class="fc2" id="t-qtd" onchange="calcTerc()">
+              <option value="1">1 profissional</option><option value="2">2 profissionais</option><option value="3">3 profissionais</option>
+            </select>
+          </div>
+          <div id="terc-result" style="display:none;margin-top:10px">
+            <div class="ores">
+              <div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3);margin-bottom:4px">Custo estimado de terceirização</div>
+              <div class="ores-price" id="terc-price">R$ —</div>
+              <div class="ores-detail" id="terc-detail">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn bg" onclick="closeM('m-atrib')">Cancelar</button>
+      <button class="btn brd" id="btn-terc-ok" style="display:none" onclick="confirmarTerc()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        Confirmar terceirização e enviar custo
+      </button>
+      <button class="btn bgn" id="btn-atrib-ok" onclick="confirmarAtrib()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Atribuir e enviar email
+      </button>
     </div>
   </div>
 </div>
 
+<!-- ═══ MODAL: PRÉVIA EMAIL CINEGRAFISTA ═══ -->
+<div class="mo" id="m-email-cineg">
+  <div class="md">
+    <div class="mh">
+      <div><div class="mtitle">Email para o Cinegrafista</div><div class="msub" id="ec-sub">Prévia do email de confirmação</div></div>
+      <button class="xcl" onclick="closeM('m-email-cineg')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Para (cinegrafista)</label><input type="email" class="fc2" id="ec-para" placeholder="email@cinegrafista.com"/></div>
+          <div class="fgrp"><label class="fl">CC</label><input type="email" class="fc2" id="ec-cc" placeholder="copia@email.com"/></div>
+        </div>
+        <div class="fgrp"><label class="fl">Prévia do email</label><div class="eprev" id="ec-prev"></div></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn bg" onclick="cpEmail('ec-prev')">Copiar texto</button>
+      <button class="btn bp" onclick="enviarEmailCineg()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Abrir no cliente de email
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ENVIAR AO COMITTI ═══ -->
+<div class="mo" id="m-comitti">
+  <div class="md mdlg">
+    <div class="mh">
+      <div><div class="mtitle">Enviar ao Comitti</div><div class="msub" id="com-sub">Pedidos na fila</div></div>
+      <button class="xcl" onclick="closeM('m-comitti')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fgrp"><label class="fl">Pedidos na fila</label><div class="ql" id="com-list"></div></div>
+        <hr class="dvd"/>
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Para (Comitti) *</label><input type="email" class="fc2" id="com-para" placeholder="comitti@email.com"/></div>
+          <div class="fgrp"><label class="fl">CC</label><input type="email" class="fc2" id="com-cc" placeholder="opcional"/></div>
+        </div>
+        <div class="fgrp"><label class="fl">Prévia</label><div class="eprev" id="com-prev"></div></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn bg" onclick="cpEmail('com-prev')">Copiar</button>
+      <button class="btn bp" onclick="enviarComitti()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Abrir no email
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: IMPORTAR TEXTO ═══ -->
+<div class="mo" id="m-wa">
+  <div class="md mdlg">
+    <div class="mh">
+      <div><div class="mtitle">Importar via Texto</div><div class="msub">Cole qualquer lista de jogos — o sistema identifica automaticamente</div></div>
+      <button class="xcl" onclick="closeM('m-wa')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fgrp">
+          <label class="fl">Cole o texto aqui (WhatsApp, email, planilha...)</label>
+          <textarea class="wata" id="wa-inp" placeholder="Cole aqui os jogos em qualquer formato...&#10;&#10;Exemplos aceitos:&#10;15/07 - 15h00 - Corinthians x Palmeiras&#10;16/07/2025 19:30 São Paulo x Santos&#10;Dia 20/07 às 21h - Flamengo vs Botafogo&#10;21/07 | 16:00 | Santos x Palmeiras"></textarea>
+        </div>
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Solicitante</label><input type="text" class="fc2" id="wa-sol" placeholder="Nome do colaborador"/></div>
+          <div class="fgrp"><label class="fl">Núcleo</label><input type="text" class="fc2" id="wa-nuc" placeholder="Núcleo responsável"/></div>
+        </div>
+        <button class="btn bg" onclick="parseWa()" style="align-self:flex-start">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Identificar jogos
+        </button>
+        <div id="wa-res" style="display:none">
+          <div class="fgrp"><label class="fl">Jogos identificados</label><div class="wgl" id="wa-gl"></div></div>
+          <div class="fg fg2" style="margin-top:4px">
+            <div class="fgrp"><label class="fl">Tipo padrão</label>
+              <select class="fc2" id="wa-tipo"><option>Eng Completa</option><option>ENG</option><option>Drone</option><option>Gravação</option><option>TVU</option><option>LiveU</option></select>
+            </div>
+            <div class="fgrp"><label class="fl">Competição</label><input type="text" class="fc2" id="wa-comp" placeholder="Campeonato..."/></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn bg" onclick="closeM('m-wa')">Cancelar</button>
+      <button class="btn bp" id="btn-wa" style="display:none" onclick="importWa()">Adicionar à fila</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: NOVO PREÇO ═══ -->
+<div class="mo" id="m-preco">
+  <div class="md">
+    <div class="mh">
+      <div><div class="mtitle" id="mp-title">Novo Preço</div><div class="msub">Tabela de terceirização</div></div>
+      <button class="xcl" onclick="closeM('m-preco')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Tipo de cobertura *</label>
+            <select class="fc2" id="p-tipo"><option>Eng Completa</option><option>ENG</option><option>Drone</option><option>Gravação</option><option>TVU</option><option>LiveU</option></select>
+          </div>
+          <div class="fgrp"><label class="fl">Cidade / Região *</label><input type="text" class="fc2" id="p-cidade" placeholder="São Paulo, RJ, Nacional..."/></div>
+        </div>
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Duração (horas) *</label><input type="number" class="fc2" id="p-dur" placeholder="4" min="1" max="24"/></div>
+          <div class="fgrp"><label class="fl">Nº de profissionais *</label>
+            <select class="fc2" id="p-qtd"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+          </div>
+        </div>
+        <div class="fgrp"><label class="fl">Valor base (R$) *</label><input type="number" class="fc2" id="p-val" placeholder="1500.00" min="0" step="50"/></div>
+        <div class="fgrp"><label class="fl">Observações</label><textarea class="fc2" id="p-obs" rows="2" placeholder="Inclui deslocamento, diária, etc..."></textarea></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn bg" onclick="closeM('m-preco')">Cancelar</button>
+      <button class="btn bp" onclick="savePreco()">Salvar preço</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: EDITAR CINEGRAFISTA ═══ -->
+<div class="mo" id="m-cineg">
+  <div class="md">
+    <div class="mh">
+      <div><div class="mtitle" id="mc-title">Dados do Cinegrafista</div><div class="msub">Informações pessoais e documentos</div></div>
+      <button class="xcl" onclick="closeM('m-cineg')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <!-- FOTO -->
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:4px">
+          <div id="mc-foto-prev" style="width:72px;height:72px;border-radius:50%;background:var(--sf3);border:2px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden;flex-shrink:0">👤</div>
+          <div>
+            <label class="fl" style="display:block;margin-bottom:6px">Foto do cinegrafista</label>
+            <label class="btn bg" style="cursor:pointer;font-size:12px">
+              📷 Escolher foto
+              <input type="file" id="mc-foto-inp" accept="image/*" style="display:none" onchange="previewFoto(this)"/>
+            </label>
+            <div style="font-size:11px;color:var(--tx3);margin-top:5px">JPG, PNG até 2MB</div>
+          </div>
+        </div>
+        <hr class="dvd"/>
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Nome completo *</label><input type="text" class="fc2" id="mc-nome" placeholder="Nome completo"/></div>
+          <div class="fgrp"><label class="fl">Data de nascimento *</label><input type="date" class="fc2" id="mc-nasc"/></div>
+        </div>
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">CPF *</label><input type="text" class="fc2" id="mc-cpf" placeholder="000.000.000-00" maxlength="14" oninput="maskCpf(this)"/></div>
+          <div class="fgrp"><label class="fl">RG *</label><input type="text" class="fc2" id="mc-rg" placeholder="00.000.000-0"/></div>
+        </div>
+        <div class="fg fg2">
+          <div class="fgrp"><label class="fl">Email</label><input type="email" class="fc2" id="mc-email" placeholder="email@cinegrafista.com"/></div>
+          <div class="fgrp"><label class="fl">Telefone / WhatsApp</label><input type="text" class="fc2" id="mc-tel" placeholder="(11) 99999-9999"/></div>
+        </div>
+        <div class="fgrp"><label class="fl">Especialidade</label>
+          <select class="fc2" id="mc-esp">
+            <option value="Cinegrafista">Cinegrafista</option>
+            <option value="Assistente">Assistente</option>
+            <option value="Drone">Piloto de Drone</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn bg" onclick="closeM('m-cineg')">Cancelar</button>
+      <button class="btn bp" onclick="saveCineg()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="ti2" id="t-ic">✓</div><span id="t-msg"></span></div>
+
+<!-- Gmail OAuth token holder -->
 <script>
-const TIMES = ["Athletico","Atlético-MG","Bahia","Botafogo","Bragantino","Chapecoense","Corinthians","Coritiba","Cruzeiro","Flamengo","Fluminense","Fortaleza","Grêmio","Internacional","Mirassol","Palmeiras","Remo","Santos","São Paulo","Vasco","Vitória","Red Bull Bragantino","América-MG","Avaí","Botafogo-SP","CRB","Ceará","Criciúma","CSA","Guarani","Goiás","Ituano","Juventude","Londrina","Novorizontino","Operário","Paysandu","Ponte Preta","Santa Cruz","Sport","Vila Nova"].sort();
-const COMPS = ["Brasileirão Série A 2026","Brasileirão Série B 2026","Copa do Brasil 2026","Copa Sul-Americana","Copa Libertadores"];
-const TIPOS = ["Freela do Comitti","LiveU","TVU","Sem imagens","Transmissão CazéTV"];
-const DIAS  = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+// ══════════════════════════════════════════════════
+// DADOS FIXOS — cinegrafistas base (complementados pelo admin)
+// ══════════════════════════════════════════════════
+const CINEG_BASE=[
+  {id:'c1',nome:'Wendel Machado',   cor:'#3b82f6'},
+  {id:'c2',nome:'Leonardo Ferreira',cor:'#22c55e'},
+  {id:'c3',nome:'Alan Gonzaga',     cor:'#f59e0b'},
+  {id:'c4',nome:'Mauricio Bandeira',cor:'#a78bfa'},
+];
+const ASSIST=[
+  {id:'a1',nome:'Thais Martins',     cor:'#ec4899'},
+  {id:'a2',nome:'Willyam Nascimento',cor:'#06b6d4'},
+  {id:'a3',nome:'Rafael Victoriano', cor:'#f97316'},
+  {id:'a4',nome:'Marildo Oliveira',  cor:'#84cc16'},
+  {id:'a5',nome:'Agnaldo Sousa',     cor:'#e879f9'},
+];
+let CINEG=[...CINEG_BASE]; // will be overridden by saved data
+const ADMINS=['demo-admin','sergio'];
 
-let pedidos = JSON.parse(localStorage.getItem("ped_cob4")||"[]");
-let fila    = JSON.parse(localStorage.getItem("ped_fila4")||"[]");
-let filtroAtivo = "todos";
-let importResult = [];
-let accessToken = null;
-let cfgEmails = { comitti:[], cc:[], bcc:[] };
-
-// ── GOOGLE AUTH ──────────────────────────────────────────
-window.onload = () => {
-  carregarConfig();
-  google.accounts.id.initialize({ client_id: CFG.google_client_id, callback: onGoogleLogin, auto_select: true });
-  google.accounts.id.renderButton(document.getElementById("btn-google-login"), { theme:"outline", size:"large", locale:"pt-BR" });
-  google.accounts.id.prompt();
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+let S={
+  user:null, role:'colab', // 'admin' | 'colab'
+  pedidos:[], precos:[],
+  selTipo:null, editId:null, atribId:null, editPrecoId:null,
+  filter:'todos', waGames:[]
 };
 
-function onGoogleLogin(response) {
-  const payload = parseJwt(response.credential);
-  document.getElementById("user-name").textContent = payload.email;
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: CFG.google_client_id,
-    scope: "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose",
-    callback: (tr) => { accessToken = tr.access_token; document.getElementById("tela-login").style.display="none"; document.getElementById("tela-app").style.display="block"; iniciarApp(); }
-  });
-  client.requestAccessToken();
-}
-function parseJwt(token) {
-  const b = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-  return JSON.parse(decodeURIComponent(atob(b).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
-}
-function logout() { google.accounts.id.disableAutoSelect(); accessToken=null; document.getElementById("tela-app").style.display="none"; document.getElementById("tela-login").style.display="flex"; }
-
-// ── INIT ─────────────────────────────────────────────────
-function iniciarApp() {
-  preencherSelect("f-comp", COMPS);
-  preencherSelect("f-tipo", TIPOS);
-  preencherSelectOpt("f-casa", TIMES);
-  preencherSelectOpt("f-visit", TIMES);
-  onTipoChange(); renderFila(); renderLista(); atualizarBadge();
-}
-function preencherSelect(id, arr) { const el=document.getElementById(id); arr.forEach(v=>{const o=document.createElement("option");o.value=o.textContent=v;el.appendChild(o);}); }
-function preencherSelectOpt(id, arr) { const el=document.getElementById(id); el.innerHTML='<option value="">Selecione...</option>'; arr.forEach(v=>{const o=document.createElement("option");o.value=o.textContent=v;el.appendChild(o);}); }
-
-// ── TABS ─────────────────────────────────────────────────
-function setTab(nome, btn) {
-  ["novo","lista","importar"].forEach(t=>document.getElementById("tab-"+t).style.display=t===nome?"block":"none");
-  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active")); btn.classList.add("active");
-  if(nome==="lista") renderLista();
-}
-
-// ── FORMULÁRIO ───────────────────────────────────────────
-function onTipoChange() {
-  const tipo=document.getElementById("f-tipo").value;
-  const isC=tipo==="Freela do Comitti", isCrew=tipo==="TVU"||tipo==="LiveU";
-  document.getElementById("campo-crew").style.display=isCrew?"grid":"none";
-  document.getElementById("info-comitti").style.display=isC?"block":"none";
-  document.getElementById("btns-form").innerHTML = isC
-    ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn" style="background:#e6f1fb;color:#185fa5;border-color:#b5d4f4" onclick="addFila()">+ Adicionar à fila</button><button class="btn" onclick="addFilaEEnviar()">Adicionar e enviar agora</button></div>`
-    : `<button class="btn btn-blue" onclick="salvarSingle()">Salvar pedido</button>`;
-}
-function getForm() { return { data:document.getElementById("f-data").value, hora:document.getElementById("f-hora").value, competicao:document.getElementById("f-comp").value, timeCasa:document.getElementById("f-casa").value, timeVisitante:document.getElementById("f-visit").value, tipoCobertura:document.getElementById("f-tipo").value, cinegrafista:document.getElementById("f-cineg")?.value||"", assistente:document.getElementById("f-assist")?.value||"" }; }
-function resetForm() { ["f-data","f-hora","f-cineg","f-assist"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";}); document.getElementById("f-casa").value=""; document.getElementById("f-visit").value=""; document.getElementById("f-tipo").value=TIPOS[0]; document.getElementById("f-comp").value=COMPS[0]; onTipoChange(); }
-function validar(f) { if(!f.data||!f.hora||!f.timeCasa||!f.timeVisitante){flash("Preencha data, hora e times.","err");return false;} if((f.tipoCobertura==="TVU"||f.tipoCobertura==="LiveU")&&!f.cinegrafista){flash("Informe o cinegrafista para TVU/LiveU.","err");return false;} return true; }
-function salvarSingle() { const f=getForm();if(!validar(f))return; pedidos.unshift({...f,id:Date.now(),status:"pendente",criadoEm:new Date().toISOString()}); persist();flash("Pedido salvo!","ok");resetForm();setTab("lista",document.querySelectorAll(".tab")[1]); }
-function addFila() { const f=getForm();if(!validar(f))return; fila.push({...f,id:Date.now(),status:"na_fila",criadoEm:new Date().toISOString()}); persist();renderFila();resetForm();flash(`${f.timeCasa} x ${f.timeVisitante} adicionado à fila.`,"ok"); }
-function addFilaEEnviar() { const f=getForm();if(!validar(f))return; fila.push({...f,id:Date.now(),status:"na_fila",criadoEm:new Date().toISOString()}); persist();resetForm();abrirModal(); }
-function removerDaFila(id) { fila=fila.filter(p=>p.id!==id);persist();renderFila(); }
-
-// ── EMAIL ────────────────────────────────────────────────
-function buildCorpo(itens) {
-  const linhas=itens.map((p,i)=>`${i+1}. ${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora} | ${p.competicao}\n   ${p.timeCasa} x ${p.timeVisitante}`).join("\n\n");
-  return `Olá Marcelo,\n\nSeguem os pedidos de cobertura:\n\n${linhas}\n\nPor favor, confirme a disponibilidade para cada jogo.\n\nObrigado,\nEquipe de Redes`;
-}
-function abrirModal() {
-  if(!fila.length) return;
-  const assunto=`Pedidos de cobertura – ${fila.length} jogo(s)`, corpo=buildCorpo(fila);
-  document.getElementById("m-para").textContent=cfgEmails.comitti.join(", ")||CFG.email_comitti;
-  document.getElementById("m-cc").textContent=cfgEmails.cc.join(", ")||CFG.email_cc;
-  document.getElementById("m-assunto").textContent=assunto;
-  document.getElementById("m-corpo").textContent=corpo;
-  document.getElementById("btn-enviar").dataset.assunto=assunto;
-  document.getElementById("btn-enviar").dataset.corpo=corpo;
-  document.getElementById("modal").classList.add("open");
-}
-function fecharModal() { document.getElementById("modal").classList.remove("open"); }
-
-async function enviarEmail() {
-  const btn=document.getElementById("btn-enviar"); btn.disabled=true; btn.textContent="Enviando...";
-  const assunto=btn.dataset.assunto, corpo=btn.dataset.corpo;
-  const para=cfgEmails.comitti.join(",")||CFG.email_comitti;
-  const cc=cfgEmails.cc.join(",")||CFG.email_cc;
-  const bcc=cfgEmails.bcc.join(",")||CFG.email_bcc;
-  const raw=[`To: ${para}`,`Cc: ${cc}`,`Bcc: ${bcc}`,`Subject: =?utf-8?B?${btoa(unescape(encodeURIComponent(assunto)))}?=`,`Content-Type: text/plain; charset=utf-8`,``,corpo].join("\r\n");
-  const encoded=btoa(unescape(encodeURIComponent(raw))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
-  try {
-    const res=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send",{method:"POST",headers:{"Authorization":`Bearer ${accessToken}`,"Content-Type":"application/json"},body:JSON.stringify({raw:encoded})});
-    const data=await res.json(); if(data.error) throw new Error(data.error.message);
-    const enviados=fila.map(p=>({...p,status:"email_enviado"}));
-    pedidos=[...enviados,...pedidos]; fila=[];
-    persist();renderFila();fecharModal();
-    flash(`Pedido realizado com sucesso! Email enviado para Marcelo Comitti com ${enviados.length} jogo(s).`,"ok");
-    setTab("lista",document.querySelectorAll(".tab")[1]);
-  } catch(e) { flash("Falha ao enviar: "+e.message,"err"); }
-  btn.disabled=false; btn.textContent="Enviar email";
-}
-
-// ── CONFIGURAÇÕES ────────────────────────────────────────
-function carregarConfig() {
-  const s=JSON.parse(localStorage.getItem("ped_cfg3")||"{}");
-  cfgEmails.comitti = s.comitti || CFG.email_comitti.split(",").map(e=>e.trim());
-  cfgEmails.cc      = s.cc      || CFG.email_cc.split(",").map(e=>e.trim());
-  cfgEmails.bcc     = s.bcc     || CFG.email_bcc.split(",").map(e=>e.trim());
-}
-function abrirConfig() { renderCfgLista("comitti"); renderCfgLista("cc"); renderCfgLista("bcc"); document.getElementById("modal-config").classList.add("open"); }
-function fecharConfig() { document.getElementById("modal-config").classList.remove("open"); }
-function renderCfgLista(tipo) {
-  const el=document.getElementById("lista-"+tipo);
-  el.innerHTML = cfgEmails[tipo].length
-    ? cfgEmails[tipo].map((e,i)=>`<div class="email-tag"><span>${e}</span><button class="btn-x" onclick="removerCfgEmail('${tipo}',${i})">×</button></div>`).join("")
-    : `<p style="font-size:13px;color:#aaa;margin-bottom:6px">Nenhum email cadastrado.</p>`;
-}
-function removerCfgEmail(tipo, idx) { cfgEmails[tipo].splice(idx,1); renderCfgLista(tipo); }
-function confirmarNovo(tipo) {
-  const input=document.getElementById("input-novo-"+tipo), val=input.value.trim();
-  if(!val||!val.includes("@")){flash("Informe um email válido.","err");return;}
-  if(cfgEmails[tipo].includes(val)){flash("Este email já está na lista.","err");return;}
-  cfgEmails[tipo].push(val); input.value=""; renderCfgLista(tipo);
-}
-function salvarConfig() {
-  localStorage.setItem("ped_cfg3",JSON.stringify(cfgEmails));
-  fecharConfig(); flash("Configurações salvas!","ok");
-}
-
-// ── IMPORTAR ─────────────────────────────────────────────
-function processarImport() {
-  const texto=document.getElementById("importar-texto").value.trim(); if(!texto) return;
-  const linhas=texto.split("\n").map(l=>l.trim()).filter(Boolean); importResult=[]; let dataAtual="";
-  const parseHora=s=>{const m=s.match(/(\d{1,2})h(\d{2})?/i)||s.match(/(\d{1,2}):(\d{2})/);return m?`${m[1].padStart(2,"0")}:${(m[2]||"00").padStart(2,"0")}`:""};
-  const parseDia=l=>{const m=l.match(/DIA\s+(\d{1,2})\/(\d{2})/i);return m?`2026-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`:null};
-  const detectaTipo=l=>{if(/freela.*comitti/i.test(l))return"Freela do Comitti";if(/liveu/i.test(l))return"LiveU";if(/\btvu\b/i.test(l))return"TVU";if(/sem imagens/i.test(l))return"Sem imagens";if(/cazé|caze|transmiss/i.test(l))return"Transmissão CazéTV";return"Sem imagens"};
-  const detectaComp=l=>{if(/série b|serie b/i.test(l))return"Brasileirão Série B 2026";if(/brasileirão|campeonato brasileiro|brasileirao/i.test(l))return"Brasileirão Série A 2026";if(/copa do brasil/i.test(l))return"Copa do Brasil 2026";if(/libertadores/i.test(l))return"Copa Libertadores";if(/sul.americana/i.test(l))return"Copa Sul-Americana";return"Brasileirão Série A 2026"};
-  const extraiTimes=l=>{const m=l.match(/\|\s*([^|]+?)\s+[Xx]\s+([^|]+?)(?:\s+(?:freela|liveu|tvu|sem imagens|transmiss|cazé)|$)/i);if(m)return{timeCasa:m[1].replace(/campeonato.*|brasileir.*/gi,"").trim(),timeVisitante:m[2].trim()};const m2=l.match(/([A-Za-zÀ-ú\s\-]+?)\s+[Xx]\s+([A-Za-zÀ-ú\s\-]+)/i);return m2?{timeCasa:m2[1].trim(),timeVisitante:m2[2].trim()}:{timeCasa:"",timeVisitante:""}};
-  const extraiNomes=(l,tipo)=>{
-    if(tipo==="Freela do Comitti")return{cinegrafista:"",assistente:""};
-    let r=l.replace(/freela.*?comitti/i,"").replace(/liveu/i,"").replace(/\btvu\b/i,"").replace(/sem imagens/i,"").replace(/transmissão cazétv|cazétv|caze ?tv/i,"").replace(/\d{1,2}h\d{0,2}/i,"").replace(/\d{1,2}:\d{2}/,"").replace(/brasileirão.*?2026|campeonato brasileiro|copa do brasil|libertadores|sul-americana/gi,"").replace(/\|/g," ").trim();
-    ["athletico","atlético-mg","atlético mg","bahia","botafogo","bragantino","chapecoense","corinthians","coritiba","cruzeiro","flamengo","fluminense","fortaleza","grêmio","gremio","internacional","mirassol","palmeiras","remo","santos","são paulo","sao paulo","vasco","vitória","vitoria","red bull bragantino"].forEach(t=>{r=r.replace(new RegExp(t,"gi"),"");});
-    r=r.replace(/\s+x\s+/gi," ").replace(/\s{2,}/g," ").trim();
-    const p=r.split(/,/).map(s=>s.trim()).filter(Boolean);
-    if(p.length>=2)return{cinegrafista:p[0],assistente:p[1]};
-    const w=r.split(/\s+/).filter(x=>x.length>1&&!/^\d+$/.test(x));
-    return{cinegrafista:w.slice(0,2).join(" "),assistente:w.slice(2,4).join(" ")};
-  };
-  for(const linha of linhas) {
-    const dia=parseDia(linha);if(dia){dataAtual=dia;continue;}
-    const hm=linha.match(/^(\d{1,2}[h:]\d{0,2})/i);
-    if(!hm&&!linha.includes("|"))continue;
-    const hora=parseHora(hm?.[1]||linha),tipo=detectaTipo(linha),comp=detectaComp(linha);
-    const{timeCasa,timeVisitante}=extraiTimes(linha),{cinegrafista,assistente}=extraiNomes(linha,tipo);
-    if(timeCasa&&timeVisitante) importResult.push({data:dataAtual,hora,competicao:comp,timeCasa,timeVisitante,tipoCobertura:tipo,cinegrafista,assistente,id:Date.now()+Math.random(),status:"pendente",criadoEm:new Date().toISOString()});
+function save(){localStorage.setItem('cd4',JSON.stringify({pedidos:S.pedidos,precos:S.precos,cineg:CINEG,user:S.user,role:S.role}))}
+function load(){
+  const r=localStorage.getItem('cd4');
+  if(r){
+    const d=JSON.parse(r);
+    S.pedidos=d.pedidos||[];S.precos=d.precos||[];S.user=d.user||null;S.role=d.role||'colab';
+    if(d.cineg&&d.cineg.length) CINEG=d.cineg;
   }
-  if(!importResult.length){flash("Nenhum jogo identificado.","err");return;}
-  document.getElementById("import-count").textContent=`${importResult.length} jogo(s) identificado(s):`;
-  const items=document.getElementById("import-items");items.innerHTML="";
-  importResult.forEach(p=>{items.innerHTML+=`<div class="resultado-item"><span><strong>${p.timeCasa} × ${p.timeVisitante}</strong> <span style="color:#aaa">${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora}${p.cinegrafista?" · "+p.cinegrafista:""}</span></span><span class="pill ${pillClass(p.tipoCobertura)}">${p.tipoCobertura}</span></div>`;});
-  document.getElementById("import-resultado").style.display="block";
-}
-function confirmarImport() {
-  const comitti=importResult.filter(p=>p.tipoCobertura==="Freela do Comitti"),outros=importResult.filter(p=>p.tipoCobertura!=="Freela do Comitti");
-  pedidos=[...outros,...pedidos];fila=[...fila,...comitti];
-  persist();renderFila();renderLista();atualizarBadge();
-  document.getElementById("importar-texto").value="";document.getElementById("import-resultado").style.display="none";importResult=[];
-  if(comitti.length)abrirModal();else flash(`${outros.length} pedido(s) importado(s)!`,"ok");
-  setTab("lista",document.querySelectorAll(".tab")[1]);
 }
 
-// ── RENDER ───────────────────────────────────────────────
-function renderFila() {
-  const box=document.getElementById("fila-box");box.style.display=fila.length?"block":"none";
-  document.getElementById("fila-title").textContent=`${fila.length} jogo(s) na fila para Comitti`;
-  document.getElementById("fila-lista").innerHTML=fila.map(p=>`<div class="fila-item"><div><div class="fila-nome">${p.timeCasa} × ${p.timeVisitante}</div><div class="fila-meta">${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora}</div></div><button class="btn-x" onclick="removerDaFila(${p.id})">×</button></div>`).join("");
+function openMailto(url){
+  const a=document.createElement('a');
+  a.href=url; a.target='_blank'; a.rel='noopener';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>document.body.removeChild(a),200);
 }
-function renderLista() {
-  const el=document.getElementById("lista-pedidos");
-  const filtrados=pedidos.filter(p=>{if(filtroAtivo==="comitti")return p.tipoCobertura==="Freela do Comitti";if(filtroAtivo==="pendente")return p.status==="pendente";return true;});
-  if(!filtrados.length){el.innerHTML='<div class="empty">Nenhum pedido encontrado.</div>';return;}
-  el.innerHTML=filtrados.map(p=>`<div class="pedido-card"><div><div class="pedido-nome">${p.timeCasa} × ${p.timeVisitante}</div><div class="pedido-meta">${fmtDia(p.data)} ${fmtData(p.data)} · ${p.hora} · ${p.competicao}</div>${p.cinegrafista?`<div class="pedido-crew">Cinegrafista: ${p.cinegrafista}${p.assistente?" · Assistente: "+p.assistente:""}</div>`:""}</div><div class="badges"><span class="pill ${pillClass(p.tipoCobertura)}">${p.tipoCobertura}</span>${p.status==="email_enviado"?'<span class="pill pill-ok">Email enviado</span>':""}</div></div>`).join("");
-}
-function setFiltro(f,btn){filtroAtivo=f;document.querySelectorAll(".filtro-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");renderLista();}
 
-// ── UTILS ────────────────────────────────────────────────
-function persist(){localStorage.setItem("ped_cob4",JSON.stringify(pedidos));localStorage.setItem("ped_fila4",JSON.stringify(fila));atualizarBadge();}
-function atualizarBadge(){document.getElementById("badge-total").textContent=`${pedidos.length} pedido${pedidos.length!==1?"s":""}`;}
-function fmtData(d){if(!d)return"";const[y,m,dia]=d.split("-");return`${dia}/${m}/${y}`;}
-function fmtDia(d){if(!d)return"";const[y,m,dia]=d.split("-");return DIAS[new Date(+y,+m-1,+dia).getDay()];}
-function pillClass(tipo){return{"Freela do Comitti":"pill-blue","LiveU":"pill-teal","TVU":"pill-green","Sem imagens":"pill-gray","Transmissão CazéTV":"pill-coral"}[tipo]||"pill-gray";}
-function flash(msg,tipo="ok"){const el=document.getElementById("flash");el.textContent=msg;el.className=`flash show flash-${tipo}`;setTimeout(()=>el.classList.remove("show"),5000);}
+function buildCcList(extraEmails){
+  const fixed=['oaraujo@livemode.com','sstamm@livemode.com','isouza@livemode.com'];
+  const dynamic=S.user&&S.role==='admin'&&!fixed.includes(S.user.email)?[S.user.email]:[];
+  return [...fixed,...dynamic,...(extraEmails||[])].filter((v,i,a)=>v&&a.indexOf(v)===i);
+}
+
+function googleLogin(resp){
+  const p=parseJwt(resp.credential);
+  if(!p.email.endsWith('@livemode.com')){
+    toast('Acesso restrito a emails @livemode.com','w');
+    document.getElementById('login-error').textContent='❌ Use seu email @livemode.com para entrar.';
+    document.getElementById('login-error').style.display='block';
+    return;
+  }
+  document.getElementById('login-error').style.display='none';
+  const admins=['clizardo@livemode.com','mbillat@livemode.com','sstamm@livemode.com','jcrispim@livemode.com','isouza@livemode.com','faugusto@livemode.com'];
+  S.user={name:p.name,email:p.email,ini:p.name.split(' ').map(n=>n[0]).slice(0,2).join('')};
+  S.role=admins.includes(p.email)?'admin':'colab';
+  save(); doLogin();
+}
+function parseJwt(t){return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));}
+function demoLogin(role){
+  const names={admin:'Osmar Araujo',colab:'Colaborador Demo'};
+  const emails={admin:'clizardo@livemode.com',colab:'colaborador@livemode.com'};
+  S.user={name:names[role],email:emails[role],ini:role==='admin'?'OA':'CD'};
+  S.role=role; save(); doLogin();
+}
+function doLogin(){
+  document.getElementById('login').style.display='none';
+  document.body.classList.add('logged');
+  document.getElementById('sb-nm').textContent=S.user.name;
+  document.getElementById('sb-av').textContent=S.user.ini;
+  const rb=document.getElementById('sb-role');
+  rb.innerHTML=S.role==='admin'?'<span class="role-badge rb-admin">Admin</span>':'<span class="role-badge rb-colab">Colaborador</span>';
+  applyRole(); renderAll();
+  // init Gmail after short delay to ensure gsi loaded
+}
+function signOut(){
+  S.user=null; S.role='colab';
+  localStorage.removeItem('cd4');
+  document.body.classList.remove('logged');
+  document.getElementById('login').style.display='flex';
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('act'));
+  document.getElementById('view-dash').classList.add('act');
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('act'));
+  document.querySelector('.ni').classList.add('act');
+  document.getElementById('pg-title').textContent='Dashboard';
+}
+
+function applyRole(){
+  const isAdmin=S.role==='admin';
+  document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'':'none');
+  document.getElementById('sg-admin').style.display=isAdmin?'grid':'none';
+  document.getElementById('sg-colab').style.display=isAdmin?'none':'grid';
+  document.getElementById('btn-mais').style.display=isAdmin?'none':'flex'; // colabs add mais pedidos
+  if(!isAdmin) document.getElementById('btn-mais').style.display='flex';
+}
+
+// ══════════════════════════════════════════════════
+// VIEWS
+// ══════════════════════════════════════════════════
+function goView(v,btn){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('act'));
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('act'));
+  document.getElementById('view-'+v).classList.add('act');
+  if(btn) btn.classList.add('act');
+  else {const el=document.querySelector(`.ni[onclick*="'${v}'"]`); if(el) el.classList.add('act');}
+  const titles={dash:'Dashboard',pedidos:'Pedidos de Cobertura',equipe:'Equipe',precos:'Tabela de Preços',hist:'Histórico'};
+  document.getElementById('pg-title').textContent=titles[v]||v;
+  if(v==='pedidos') renderPed();
+  if(v==='equipe') renderEquipe();
+  if(v==='hist') renderHist();
+  if(v==='precos') renderPrecos();
+}
+
+// ══════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════
+function fd(d){if(!d)return'—';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
+function ini(n){return n.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();}
+function gc(id){return CINEG.find(c=>c.id===id);}
+function ga(id){return ASSIST.find(a=>a.id===id);}
+function fmtMoney(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+function sbadge(s){
+  const map={novo:'Novo',atrib:'Atribuído',conf:'Confirmado',conc:'Concluído',terc:'Terceirizado',env:'Enviado'};
+  return`<span class="sb s-${s}">${map[s]||s}</span>`;
+}
+function tbadge(t){
+  const ic={'Eng Completa':'🎬','ENG':'🎥','Drone':'🚁','Gravação':'📹','TVU':'📡','LiveU':'🔴'};
+  const cls={'Eng Completa':'tC','ENG':'tV','Drone':'tD','Gravação':'tG','TVU':'tT','LiveU':'tL'}[t]||'tV';
+  return`<span class="tb ${cls}">${ic[t]||'🎥'} ${t}</span>`;
+}
+function pcell(id,list){
+  const p=list.find(x=>x.id===id);if(!p)return'<span style="color:var(--tx3)">—</span>';
+  return`<div class="pc"><div class="mav" style="background:${p.cor}">${ini(p.nome)}</div><span>${p.nome}</span></div>`;
+}
+
+function calcArrival(hora){
+  if(!hora) return null;
+  const[h,m]=hora.split(':').map(Number);
+  const total=h*60+m-180;
+  const ah=Math.floor(((total%1440)+1440)%1440/60).toString().padStart(2,'0');
+  const am2=(((total%1440)+1440)%1440%60).toString().padStart(2,'0');
+  return`${ah}:${am2}`;
+}
+
+// ══════════════════════════════════════════════════
+// RENDER ALL
+// ══════════════════════════════════════════════════
+function renderAll(){updateStats();renderDash();updateBadge();}
+
+function updateStats(){
+  const p=S.pedidos;
+  // admin stats
+  document.getElementById('st-novo').textContent=p.filter(x=>x.status==='novo').length;
+  document.getElementById('st-atrib').textContent=p.filter(x=>x.status==='atrib').length;
+  document.getElementById('st-conf').textContent=p.filter(x=>x.status==='conf').length;
+  document.getElementById('st-terc').textContent=p.filter(x=>x.status==='terc').length;
+  // colab stats (own pedidos)
+  const mine=p.filter(x=>x.solEmail===S.user?.email);
+  document.getElementById('st-meus').textContent=mine.length;
+  document.getElementById('st-mand').textContent=mine.filter(x=>['atrib','conf'].includes(x.status)).length;
+  document.getElementById('st-mconc').textContent=mine.filter(x=>x.status==='conc').length;
+  document.getElementById('st-mterc').textContent=mine.filter(x=>x.status==='terc').length;
+}
+
+function updateBadge(){
+  const n=S.role==='admin'
+    ?S.pedidos.filter(p=>p.status==='novo').length
+    :S.pedidos.filter(p=>p.solEmail===S.user?.email&&['atrib','conf'].includes(p.status)).length;
+  const b=document.getElementById('nb-ped');
+  b.textContent=n; b.style.display=n>0?'inline-block':'none';
+  b.className=S.role==='admin'?'nb':'nb blue';
+}
+
+function renderDash(){
+  updateStats(); updateBadge();
+  const novos=S.pedidos.filter(p=>p.status==='novo').length;
+  const bn=document.getElementById('banner-novos');
+  if(S.role==='admin'&&novos>0){
+    bn.style.display='flex';
+    document.getElementById('banner-novos-t').textContent=`${novos} pedido(s) aguardando atribuição`;
+  } else bn.style.display='none';
+
+  const items=[...S.pedidos]
+    .filter(p=>p.status!=='conc'&&p.status!=='cancelado')
+    .sort((a,b)=>a.data>b.data?1:-1).slice(0,10);
+  const tb=document.getElementById('dash-tb'), em=document.getElementById('dash-empty');
+  if(!items.length){tb.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  tb.innerHTML=items.map(p=>`
+    <tr class="${p.status==='novo'?'qr':p.status==='terc'?'tr3':''}" onclick="openAtrib(${p.id})">
+      <td><div style="font-weight:500">${p.casa} x ${p.visit}</div><div style="font-size:11px;color:var(--tx3)">${p.comp||''}</div></td>
+      <td style="color:var(--tx2);font-size:12px">${fd(p.data)}<br/>${p.hora||''}</td>
+      <td>${tbadge(p.tipo)}</td>
+      <td>${p.cineg?pcell(p.cineg,CINEG):'<span style="color:var(--tx3);font-size:11px">A definir</span>'}</td>
+      <td>${sbadge(p.status)}</td>
+    </tr>`).join('');
+}
+
+function renderPed(){
+  const q=(document.getElementById('si').value||'').toLowerCase();
+  let items=S.pedidos.filter(p=>{
+    let show=true;
+    if(S.role==='colab') show=p.solEmail===S.user?.email;
+    const fm=S.filter==='todos'||p.status===S.filter;
+    const sm=!q||[p.casa,p.visit,p.comp,p.solNome].some(f=>(f||'').toLowerCase().includes(q));
+    return show&&fm&&sm;
+  }).sort((a,b)=>a.data>b.data?1:-1);
+
+  const tb=document.getElementById('ped-tb'), em=document.getElementById('ped-empty');
+  if(!items.length){tb.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  tb.innerHTML=items.map(p=>`
+    <tr class="${p.status==='novo'?'qr':p.status==='terc'?'tr3':''}">
+      <td><div style="font-weight:500">${p.casa} x ${p.visit}</div>
+        <div style="font-size:11px;color:var(--tx3)">${p.comp||''} ${p.obs?'· '+p.obs:''}</div></td>
+      <td style="font-size:12px;color:var(--tx2)">${fd(p.data)}<br/>${p.hora||''}</td>
+      <td>${tbadge(p.tipo)}</td>
+      <td><div style="font-size:12px;font-weight:500">${p.solNome||'—'}</div><div style="font-size:11px;color:var(--tx3)">${p.nucleo||''}</div></td>
+      <td>${p.cineg?pcell(p.cineg,CINEG):'<span style="color:var(--tx3);font-size:11px">A definir</span>'}</td>
+      <td>${sbadge(p.status)}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="ab">
+          ${S.role==='admin'&&['novo','atrib'].includes(p.status)?`<button class="ib" title="Atribuir cinegrafista" onclick="openAtrib(${p.id})" style="color:var(--gn);border-color:rgba(34,197,94,.3)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </button>`:''}
+          ${S.role==='admin'&&p.status==='conf'?`<button class="ib" onclick="setStatus(${p.id},'conc')" style="color:var(--pu);border-color:rgba(167,139,250,.3)" title="Concluir">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </button>`:''}
+          <button class="ib" onclick="delP(${p.id})" style="color:var(--rd);border-color:rgba(239,68,68,.3)" title="Remover">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function renderEquipe(){
+  function cinegCard(p){
+    const tot=S.pedidos.filter(x=>x.cineg===p.id).length;
+    const conf=S.pedidos.filter(x=>x.cineg===p.id&&x.status==='conf').length;
+    const done=S.pedidos.filter(x=>x.cineg===p.id&&x.status==='conc').length;
+    const foto=p.foto?`<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`:`<span style="font-size:18px;font-weight:700;color:#fff">${ini(p.nome)}</span>`;
+    return`<div class="pcard">
+      <div class="pch">
+        <div class="pav" style="background:${p.cor};display:flex;align-items:center;justify-content:center;overflow:hidden">${foto}</div>
+        <div style="flex:1;min-width:0">
+          <div class="pn">${p.nome}</div>
+          ${p.nasc?`<div style="font-size:11px;color:var(--tx3);margin-top:1px">Nasc: ${fd(p.nasc)}</div>`:''}
+        </div>
+        <button class="ib" onclick="openEditCineg('${p.id}')" title="Editar dados" style="flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+      </div>
+      ${p.cpf||p.rg?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        ${p.cpf?`<span class="itag">CPF: ${p.cpf}</span>`:''}
+        ${p.rg?`<span class="itag">RG: ${p.rg}</span>`:''}
+        ${p.email?`<span class="itag">✉ ${p.email}</span>`:''}
+      </div>`:''}
+      <div class="pst">
+        <div class="ps"><div class="psv">${tot}</div><div class="psl">Total</div></div>
+        <div class="ps"><div class="psv" style="color:var(--gn)">${conf}</div><div class="psl">Conf.</div></div>
+        <div class="ps"><div class="psv" style="color:var(--pu)">${done}</div><div class="psl">Feitos</div></div>
+      </div>
+    </div>`;
+  }
+  function assistCard(p){
+    const tot=S.pedidos.filter(x=>x.assist===p.id).length;
+    return`<div class="pcard">
+      <div class="pch"><div class="pav" style="background:${p.cor};display:flex;align-items:center;justify-content:center"><span style="font-size:16px;font-weight:700;color:#fff">${ini(p.nome)}</span></div>
+      <div><div class="pn">${p.nome}</div></div></div>
+      <div class="pst">
+        <div class="ps"><div class="psv">${tot}</div><div class="psl">Total</div></div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('gc').innerHTML=CINEG.map(cinegCard).join('');
+  document.getElementById('ga').innerHTML=ASSIST.map(assistCard).join('');
+}
+
+// ══════════════════════════════════════════════════
+// CINEGRAFISTAS CRUD
+// ══════════════════════════════════════════════════
+let editCinegId=null;
+let fotoBase64=null;
+
+function maskCpf(el){
+  let v=el.value.replace(/\D/g,'').slice(0,11);
+  v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  el.value=v;
+}
+
+function previewFoto(inp){
+  const file=inp.files[0]; if(!file) return;
+  if(file.size>2*1024*1024){toast('Foto maior que 2MB','w');return;}
+  const r=new FileReader();
+  r.onload=e=>{
+    fotoBase64=e.target.result;
+    const prev=document.getElementById('mc-foto-prev');
+    prev.innerHTML=`<img src="${fotoBase64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+  };
+  r.readAsDataURL(file);
+}
+
+function openEditCineg(id){
+  editCinegId=id; fotoBase64=null;
+  const c=id?CINEG.find(x=>x.id===id):null;
+  document.getElementById('mc-title').textContent=c?'Editar Cinegrafista':'Novo Cinegrafista';
+  document.getElementById('mc-nome').value=c?.nome||'';
+  document.getElementById('mc-nasc').value=c?.nasc||'';
+  document.getElementById('mc-cpf').value=c?.cpf||'';
+  document.getElementById('mc-rg').value=c?.rg||'';
+  document.getElementById('mc-email').value=c?.email||'';
+  document.getElementById('mc-tel').value=c?.tel||'';
+  document.getElementById('mc-esp').value=c?.esp||'Cinegrafista';
+  const prev=document.getElementById('mc-foto-prev');
+  prev.innerHTML=c?.foto?`<img src="${c.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`:' 👤';
+  fotoBase64=c?.foto||null;
+  document.getElementById('m-cineg').classList.add('open');
+}
+
+function saveCineg(){
+  const nome=document.getElementById('mc-nome').value.trim();
+  if(!nome){toast('Informe o nome','w');return;}
+  const CORES=['#3b82f6','#22c55e','#f59e0b','#a78bfa','#ec4899','#06b6d4','#f97316','#84cc16'];
+  if(editCinegId){
+    const c=CINEG.find(x=>x.id===editCinegId); if(!c) return;
+    c.nome=nome; c.nasc=document.getElementById('mc-nasc').value;
+    c.cpf=document.getElementById('mc-cpf').value;
+    c.rg=document.getElementById('mc-rg').value;
+    c.email=document.getElementById('mc-email').value.trim();
+    c.tel=document.getElementById('mc-tel').value.trim();
+    c.esp=document.getElementById('mc-esp').value;
+    if(fotoBase64) c.foto=fotoBase64;
+    toast('Dados atualizados!');
+  } else {
+    CINEG.push({
+      id:'c'+Date.now(), nome,
+      nasc:document.getElementById('mc-nasc').value,
+      cpf:document.getElementById('mc-cpf').value,
+      rg:document.getElementById('mc-rg').value,
+      email:document.getElementById('mc-email').value.trim(),
+      tel:document.getElementById('mc-tel').value.trim(),
+      esp:document.getElementById('mc-esp').value,
+      foto:fotoBase64||null,
+      cor:CORES[CINEG.length%CORES.length]
+    });
+    toast('Cinegrafista adicionado!');
+  }
+  save(); closeM('m-cineg'); renderEquipe();
+}
+
+function renderPrecos(){
+  const tb=document.getElementById('prec-tb'), em=document.getElementById('prec-empty');
+  if(!S.precos.length){tb.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  tb.innerHTML=S.precos.map(p=>`
+    <tr>
+      <td>${tbadge(p.tipo)}</td>
+      <td>${p.cidade||'—'}</td>
+      <td>${p.dur}h</td>
+      <td>${p.qtd} profissional(is)</td>
+      <td style="font-weight:600;color:var(--gn)">${fmtMoney(p.val)}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="ab">
+          <button class="ib" onclick="editPreco(${p.id})" title="Editar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="ib" onclick="delPreco(${p.id})" style="color:var(--rd);border-color:rgba(239,68,68,.3)" title="Remover">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function renderHist(){
+  const items=S.pedidos.filter(p=>['conc','cancelado','terc'].includes(p.status)).sort((a,b)=>a.data<b.data?1:-1);
+  const tb=document.getElementById('hist-tb'), em=document.getElementById('hist-empty');
+  if(!items.length){tb.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  tb.innerHTML=items.map(p=>`
+    <tr>
+      <td><div style="font-weight:500">${p.casa} x ${p.visit}</div><div style="font-size:11px;color:var(--tx3)">${p.comp||''}</div></td>
+      <td style="font-size:12px;color:var(--tx2)">${fd(p.data)}</td>
+      <td>${tbadge(p.tipo)}</td>
+      <td>${p.cineg?pcell(p.cineg,CINEG):'<span style="color:var(--tx3)">—</span>'}</td>
+      <td><div style="font-size:12px">${p.solNome||'—'}</div><div style="font-size:11px;color:var(--tx3)">${p.nucleo||''}</div></td>
+      <td>${sbadge(p.status)}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════════
+// MODAL NOVO PEDIDO
+// ══════════════════════════════════════════════════
+function openNovo(){
+  S.editId=null; S.selTipo=null;
+  document.getElementById('mn-title').textContent='Novo Pedido de Cobertura';
+  ['f-solnom','f-nucleo','f-solem','f-data','f-hora','f-comp','f-casa','f-visit','f-prodnm','f-prodct','f-repnm','f-repct','f-obs']
+    .forEach(id=>document.getElementById(id).value='');
+  // pre-fill from logged user
+  document.getElementById('f-solnom').value=S.user?.name||'';
+  document.getElementById('f-solem').value=S.user?.email||'';
+  document.querySelectorAll('.to').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('m-novo').classList.add('open');
+}
+
+function calcChegada(){
+  // purely cosmetic for the form — actual calc in atrib modal
+}
+
+function closeM(id){document.getElementById(id).classList.remove('open');}
+function selTipo(t,btn){S.selTipo=t;document.querySelectorAll('.to').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+
+function saveP(more){
+  const solNome=document.getElementById('f-solnom').value.trim();
+  const nucleo=document.getElementById('f-nucleo').value.trim();
+  const data=document.getElementById('f-data').value;
+  const hora=document.getElementById('f-hora').value;
+  const casa=document.getElementById('f-casa').value.trim();
+  const visit=document.getElementById('f-visit').value.trim();
+  if(!solNome||!nucleo||!data||!hora||!casa||!visit||!S.selTipo){toast('Preencha todos os campos obrigatórios (*)','w');return;}
+
+  const obj={
+    id:S.editId||Date.now(), solNome, nucleo,
+    solEmail:document.getElementById('f-solem').value.trim()||S.user?.email||'',
+    data, hora, comp:document.getElementById('f-comp').value.trim(),
+    casa, visit, tipo:S.selTipo,
+    prodNome:document.getElementById('f-prodnm').value.trim(),
+    prodCont:document.getElementById('f-prodct').value.trim(),
+    repNome:document.getElementById('f-repnm').value.trim(),
+    repCont:document.getElementById('f-repct').value.trim(),
+    obs:document.getElementById('f-obs').value.trim(),
+    status:'novo', cineg:'', assist:'', chegada:'', ts:Date.now()
+  };
+
+  if(S.editId){
+    const idx=S.pedidos.findIndex(p=>p.id===S.editId);
+    obj.status=S.pedidos[idx].status; obj.cineg=S.pedidos[idx].cineg; obj.assist=S.pedidos[idx].assist;
+    S.pedidos[idx]=obj; closeM('m-novo'); toast('Pedido atualizado!');
+  } else {
+    S.pedidos.push(obj);
+    const n=S.pedidos.filter(p=>p.status==='novo').length;
+    toast(`Pedido enviado! (${n} aguardando atribuição)`);
+    if(more){
+      ['f-data','f-hora','f-casa','f-visit','f-obs','f-comp','f-prodnm','f-prodct','f-repnm','f-repct']
+        .forEach(id=>document.getElementById(id).value='');
+      document.querySelectorAll('.to').forEach(b=>b.classList.remove('sel')); S.selTipo=null;
+      document.getElementById('f-data').focus();
+    } else closeM('m-novo');
+  }
+  save(); renderAll(); renderPed();
+}
+
+function delP(id){
+  if(!confirm('Remover este pedido?')) return;
+  S.pedidos=S.pedidos.filter(p=>p.id!==id); save(); renderAll(); renderPed(); toast('Pedido removido');
+}
+
+function setStatus(id,s){
+  const p=S.pedidos.find(x=>x.id===id); if(p) p.status=s; save(); renderAll(); renderPed();
+  toast({conf:'Confirmado!',conc:'Concluído!',terc:'Terceirizado!'}[s]||'Status atualizado');
+}
+
+// ══════════════════════════════════════════════════
+// MODAL ATRIBUIÇÃO (ADMIN)
+// ══════════════════════════════════════════════════
+function openAtrib(id){
+  if(S.role!=='admin'){toast('Apenas admins podem atribuir cinegrafistas','w');return;}
+  const p=S.pedidos.find(x=>x.id===id); if(!p) return;
+  S.atribId=id;
+
+  document.getElementById('atrib-sub').textContent=`${p.casa} x ${p.visit} — ${fd(p.data)} ${p.hora}`;
+  document.getElementById('atrib-info').innerHTML=`
+    <div class="irow" style="margin-bottom:6px">
+      ${tbadge(p.tipo)}
+      <span class="itag">📅 ${fd(p.data)} ${p.hora}</span>
+      <span class="itag">📍 ${p.comp||'Sem competição'}</span>
+    </div>
+    <div class="irow">
+      <span class="itag">👤 ${p.solNome||'—'} · ${p.nucleo||'—'}</span>
+      ${p.prodNome?`<span class="itag">🎙 Prod: ${p.prodNome}${p.prodCont?' ('+p.prodCont+')':''}</span>`:''}
+      ${p.repNome?`<span class="itag">📺 Rep: ${p.repNome}${p.repCont?' ('+p.repCont+')':''}</span>`:''}
+    </div>`;
+
+  // populate selects
+  document.getElementById('a-cineg').innerHTML='<option value="">Selecionar cinegrafista...</option>'+
+    CINEG.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  if(p.cineg) document.getElementById('a-cineg').value=p.cineg;
+
+  document.getElementById('a-assist').innerHTML='<option value="">Nenhum</option>'+
+    ASSIST.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+  if(p.assist) document.getElementById('a-assist').value=p.assist;
+
+  document.getElementById('chk-terc').checked=false;
+  document.getElementById('terc-section').style.display='none';
+  document.getElementById('btn-terc-ok').style.display='none';
+  document.getElementById('btn-atrib-ok').style.display='flex';
+  document.getElementById('t-cidade').value='';
+  document.getElementById('t-dur').value='';
+  document.getElementById('t-qtd').value='1';
+  document.getElementById('terc-result').style.display='none';
+  document.getElementById('arrival-badge').style.display='none';
+
+  calcChegadaAtrib();
+  document.getElementById('m-atrib').classList.add('open');
+}
+
+function calcChegadaAtrib(){
+  const p=S.pedidos.find(x=>x.id===S.atribId); if(!p||!p.hora) return;
+  const arr=calcArrival(p.hora);
+  if(arr){
+    document.getElementById('arrival-time').textContent=arr;
+    document.getElementById('arrival-date').textContent=`${fd(p.data)} — 3 horas antes do jogo (${p.hora})`;
+    document.getElementById('arrival-badge').style.display='flex';
+  }
+}
+
+function toggleTerc(){
+  const chk=document.getElementById('chk-terc').checked;
+  document.getElementById('terc-section').style.display=chk?'block':'none';
+  document.getElementById('btn-terc-ok').style.display=chk?'flex':'none';
+  document.getElementById('btn-atrib-ok').style.display=chk?'none':'flex';
+  if(chk) calcTerc();
+}
+
+function calcTerc(){
+  const p=S.pedidos.find(x=>x.id===S.atribId); if(!p) return;
+  const cidade=(document.getElementById('t-cidade').value||'').trim().toLowerCase();
+  const dur=parseFloat(document.getElementById('t-dur').value)||0;
+  const qtd=parseInt(document.getElementById('t-qtd').value)||1;
+  const tipo=p.tipo;
+
+  // Find best matching price
+  let match=S.precos.find(pr=>
+    pr.tipo===tipo&&
+    (cidade===''||pr.cidade.toLowerCase().includes(cidade)||cidade.includes(pr.cidade.toLowerCase()))&&
+    pr.qtd==qtd
+  );
+  // Fallback: same type and qty, any city
+  if(!match) match=S.precos.find(pr=>pr.tipo===tipo&&pr.qtd==qtd);
+  // Fallback: any type
+  if(!match) match=S.precos.find(pr=>pr.qtd==qtd);
+
+  const res=document.getElementById('terc-result');
+  const priceEl=document.getElementById('terc-price');
+  const detEl=document.getElementById('terc-detail');
+
+  if(match){
+    let val=parseFloat(match.val);
+    // adjust for duration proportionally
+    const baseDur=parseFloat(match.dur)||4;
+    if(dur>0) val=val*(dur/baseDur);
+    priceEl.textContent=fmtMoney(val);
+    detEl.textContent=`Base: ${fmtMoney(match.val)} (${match.dur}h, ${match.cidade}) · Ajustado para ${dur||match.dur}h · ${qtd} profissional(is)`;
+    res.style.display='block';
+  } else {
+    priceEl.textContent='Sem preço cadastrado';
+    detEl.textContent='Adicione preços na Tabela de Preços para calcular automaticamente.';
+    res.style.display='block';
+  }
+}
+
+function confirmarAtrib(){
+  const cineg=document.getElementById('a-cineg').value;
+  if(!cineg){toast('Selecione o cinegrafista','w');return;}
+  const p=S.pedidos.find(x=>x.id===S.atribId); if(!p) return;
+  const arr=calcArrival(p.hora);
+  p.cineg=cineg; p.assist=document.getElementById('a-assist').value;
+  p.chegada=arr; p.status='conf';
+  save(); closeM('m-atrib'); renderAll(); renderPed();
+
+  // Monta e abre email direto, igual ao Comitti
+  const c=gc(cineg); const a=ga(p.assist);
+  const corpo=`Olá, ${c?c.nome:''}!
+
+Você foi confirmado(a) para a seguinte cobertura:
+
+🎬 EVENTO
+${p.casa} x ${p.visit}${p.comp?'\nCompetição: '+p.comp:''}
+Data: ${fd(p.data)}
+Horário do jogo: ${p.hora}
+
+⏰ HORÁRIO DE CHEGADA: ${arr||'—'} (3 horas antes do início)
+${a?'\n👥 ASSISTENTE: '+a.nome:''}
+${p.prodNome?'\n🎙 PRODUTOR: '+p.prodNome+(p.prodCont?' — '+p.prodCont:''):''}
+${p.repNome?'\n📺 REPÓRTER: '+p.repNome+(p.repCont?' — '+p.repCont:''):''}
+${p.obs?'\n📝 OBSERVAÇÕES: '+p.obs:''}
+Tipo de cobertura: ${p.tipo}
+
+Qualquer dúvida, entre em contato.
+
+CoverDesk — Gestão de Coberturas`;
+
+  const para=c?.email||'';
+  // CC: admins fixos + solicitante do pedido
+  const ccList=buildCcList([p.solEmail]).filter(v=>v!==para).join(',');
+  const sub=encodeURIComponent(`[CoverDesk] Confirmação de cobertura — ${p.casa} x ${p.visit}`);
+  openMailto(`mailto:${para}?subject=${sub}&cc=${encodeURIComponent(ccList)}&body=${encodeURIComponent(corpo)}`);
+  toast('Email aberto! Pedido confirmado ✓');
+}
+
+function confirmarTerc(){
+  const p=S.pedidos.find(x=>x.id===S.atribId); if(!p) return;
+  p.status='terc';
+  p.tercCusto=document.getElementById('terc-price').textContent;
+  p.tercCidade=document.getElementById('t-cidade').value;
+  p.tercDur=document.getElementById('t-dur').value;
+  p.tercQtd=document.getElementById('t-qtd').value;
+  save(); closeM('m-atrib'); renderAll(); renderPed();
+  buildEmailTerc(p);
+  const body=document.getElementById('ec-prev').textContent;
+  const sub=encodeURIComponent(`[CoverDesk] Custo de terceirização — ${p.casa} x ${p.visit}`);
+  const ccTerc=buildCcList([]).join(',');
+  openMailto(`mailto:${p.solEmail}?subject=${sub}&cc=${encodeURIComponent(ccTerc)}&body=${encodeURIComponent(body)}`);
+  toast('Terceirização registrada! Email de custo aberto.');
+}
+
+function buildEmailCineg(p){
+  const c=gc(p.cineg); const a=ga(p.assist);
+  const corpo=`Olá, ${c?c.nome:''}!
+
+Você foi confirmado(a) para a seguinte cobertura:
+
+🎬 EVENTO
+${p.casa} x ${p.visit}
+${p.comp?'Competição: '+p.comp:''}
+Data: ${fd(p.data)}
+Horário do jogo: ${p.hora}
+
+⏰ HORÁRIO DE CHEGADA: ${p.chegada||calcArrival(p.hora)||'—'} (3 horas antes do início)
+
+${a?'👥 ASSISTENTE: '+a.nome+'\n':''}
+${p.prodNome?'🎙 PRODUTOR: '+p.prodNome+(p.prodCont?' — '+p.prodCont:'')+'\n':''}
+${p.repNome?'📺 REPÓRTER: '+p.repNome+(p.repCont?' — '+p.repCont:'')+'\n':''}
+${p.obs?'📝 OBSERVAÇÕES: '+p.obs+'\n':''}
+Tipo de cobertura: ${p.tipo}
+
+Qualquer dúvida, entre em contato.
+
+CoverDesk — Gestão de Coberturas`;
+
+  document.getElementById('ec-prev').textContent=corpo;
+  document.getElementById('ec-sub').textContent=`Email para ${c?c.nome:'cinegrafista'}`;
+  document.getElementById('ec-para').value=c?.email||'';
+  document.getElementById('ec-cc').value='';
+}
+
+function buildEmailTerc(p){
+  const corpo=`Olá, ${p.solNome}!
+
+Seu pedido de cobertura foi registrado, porém não temos disponibilidade interna para esta data.
+O evento será terceirizado. Confira o custo estimado abaixo:
+
+🎬 EVENTO: ${p.casa} x ${p.visit}
+📅 Data: ${fd(p.data)} — ${p.hora}
+${p.comp?'Competição: '+p.comp+'\n':''}
+Tipo: ${p.tipo}
+
+💰 CUSTO ESTIMADO DE TERCEIRIZAÇÃO: ${p.tercCusto||'—'}
+📍 Cidade/Região: ${p.tercCidade||'—'}
+⏱ Duração: ${p.tercDur||'—'}h
+👥 Profissionais: ${p.tercQtd||'1'}
+
+Este é um valor estimado. Para aprovação, entre em contato com a equipe responsável.
+
+CoverDesk — Gestão de Coberturas`;
+
+  document.getElementById('ec-prev').textContent=corpo;
+  document.getElementById('ec-para').value=p.solEmail||'';
+}
+
+function enviarEmailCineg(){
+  const para=document.getElementById('ec-para').value.trim();
+  if(!para){toast('Informe o email do cinegrafista','w');return;}
+  const cc=document.getElementById('ec-cc').value.trim();
+  const body=document.getElementById('ec-prev').textContent;
+  const p=S.pedidos.find(x=>x.id===S.atribId);
+  const sub=encodeURIComponent(`[CoverDesk] Confirmação de cobertura — ${p?p.casa+' x '+p.visit:''}`);
+  let href=`mailto:${para}?subject=${sub}&body=${encodeURIComponent(body)}`;
+  if(cc) href+=`&cc=${cc}`;
+  openMailto(href);
+  if(p) p.status='conf';
+  save(); closeM('m-email-cineg'); renderAll(); renderPed();
+  toast('Email aberto! Pedido marcado como confirmado.');
+}
+
+// ══════════════════════════════════════════════════
+// ENVIAR AO COMITTI
+// ══════════════════════════════════════════════════
+function openEnviar(){
+  const fila=S.pedidos.filter(p=>p.status==='novo').sort((a,b)=>a.data>b.data?1:-1);
+  document.getElementById('com-sub').textContent=`${fila.length} pedido(s) aguardando atribuição`;
+  document.getElementById('com-list').innerHTML=fila.length?fila.map(p=>`
+    <div class="qi">
+      <div class="qii">
+        <div class="qit">${p.casa} x ${p.visit}</div>
+        <div class="qis">${fd(p.data)} ${p.hora} · ${p.tipo} · ${p.solNome||'—'}</div>
+      </div>
+    </div>`).join(''):'<div style="color:var(--tx3);font-size:13px;padding:10px 0">Nenhum pedido novo na fila</div>';
+
+  const lines=fila.map((p,i)=>`${i+1}. ${fd(p.data)} - ${p.hora} | ${p.casa} x ${p.visit}\n   Tipo: ${p.tipo} | Solicitante: ${p.solNome||'—'} (${p.nucleo||'—'})\n   ${p.obs?'Obs: '+p.obs:''}`)
+    .join('\n\n');
+  document.getElementById('com-prev').textContent=`Pedidos de Cobertura\n${'═'.repeat(44)}\n\n${lines||'Fila vazia.'}\n\n${'─'.repeat(44)}\nCoverDesk`;
+  document.getElementById('m-comitti').classList.add('open');
+}
+
+function enviarComitti(){
+  const para=document.getElementById('com-para').value;
+  const ccExtra=document.getElementById('com-cc').value;
+  const body=document.getElementById('com-prev').textContent;
+  const ccList=buildCcList([ccExtra]).filter(v=>v!==para).join(',');
+  let href=`mailto:${para}?subject=${encodeURIComponent('Pedidos de Cobertura — CoverDesk')}&cc=${encodeURIComponent(ccList)}&body=${encodeURIComponent(body)}`;
+  openMailto(href);
+  closeM('m-comitti'); toast('Email ao Comitti aberto!');
+}
+
+// ══════════════════════════════════════════════════
+// WHATSAPP
+// ══════════════════════════════════════════════════
+function openWa(){
+  document.getElementById('wa-inp').value='';
+  document.getElementById('wa-res').style.display='none';
+  document.getElementById('btn-wa').style.display='none';
+  document.getElementById('m-wa').classList.add('open');
+}
+
+function parseWa(){
+  const text=document.getElementById('wa-inp').value;
+  if(!text.trim()){toast('Cole uma lista primeiro','w');return;}
+  S.waGames=[];
+  text.split('\n').map(l=>l.trim()).filter(Boolean).forEach(line=>{
+    const dateM=line.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+    const timeM=line.match(/(\d{1,2})[hH:](\d{0,2})/);
+    const vsM=line.match(/([A-Za-zÀ-ÿ\s\.]{3,}?)\s+(?:x|vs\.?)\s+([A-Za-zÀ-ÿ\s\.]{3,})/i);
+    if(dateM&&vsM){
+      const d=dateM[1].padStart(2,'0'),m=dateM[2].padStart(2,'0');
+      const y=dateM[3]?(dateM[3].length===2?'20'+dateM[3]:dateM[3]):new Date().getFullYear();
+      const hora=timeM?`${timeM[1].padStart(2,'0')}:${(timeM[2]||'00').padStart(2,'0')}`:'';
+      S.waGames.push({date:`${y}-${m}-${d}`,hora,casa:vsM[1].trim(),visit:vsM[2].trim()});
+    }
+  });
+  if(!S.waGames.length){toast('Nenhum jogo identificado','w');return;}
+  document.getElementById('wa-gl').innerHTML=S.waGames.map((g,i)=>`
+    <div class="wg sel" id="wg-${i}" onclick="document.getElementById('wg-${i}').classList.toggle('sel')">
+      <div class="wck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div><div style="font-weight:500;font-size:13px">${g.casa} x ${g.visit}</div><div style="font-size:11px;color:var(--tx3)">${fd(g.date)} ${g.hora}</div></div>
+    </div>`).join('');
+  document.getElementById('wa-res').style.display='block';
+  document.getElementById('btn-wa').style.display='flex';
+  toast(`${S.waGames.length} jogo(s) identificado(s)!`);
+}
+
+function importWa(){
+  const sol=document.getElementById('wa-sol').value.trim()||S.user?.name||'—';
+  const nuc=document.getElementById('wa-nuc').value.trim();
+  const tipo=document.getElementById('wa-tipo').value;
+  const comp=document.getElementById('wa-comp').value.trim();
+  const sel=S.waGames.filter((_,i)=>document.getElementById('wg-'+i)?.classList.contains('sel'));
+  if(!sel.length){toast('Selecione pelo menos um jogo','w');return;}
+  sel.forEach(g=>{
+    S.pedidos.push({
+      id:Date.now()+Math.random(), solNome:sol, nucleo:nuc,
+      solEmail:S.user?.email||'',
+      data:g.date, hora:g.hora, comp, casa:g.casa, visit:g.visit, tipo,
+      prodNome:'', prodCont:'', repNome:'', repCont:'', obs:'',
+      status:'novo', cineg:'', assist:'', chegada:'', ts:Date.now()
+    });
+  });
+  save(); closeM('m-wa'); renderAll(); renderPed();
+  toast(`${sel.length} jogo(s) adicionados!`);
+}
+
+// ══════════════════════════════════════════════════
+// PREÇOS
+// ══════════════════════════════════════════════════
+function openNovoPreco(){
+  S.editPrecoId=null;
+  document.getElementById('mp-title').textContent='Novo Preço';
+  ['p-cidade','p-dur','p-val','p-obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p-tipo').value='Vídeo';
+  document.getElementById('p-qtd').value='1';
+  document.getElementById('m-preco').classList.add('open');
+}
+
+function editPreco(id){
+  const p=S.precos.find(x=>x.id===id); if(!p) return;
+  S.editPrecoId=id;
+  document.getElementById('mp-title').textContent='Editar Preço';
+  document.getElementById('p-tipo').value=p.tipo;
+  document.getElementById('p-cidade').value=p.cidade;
+  document.getElementById('p-dur').value=p.dur;
+  document.getElementById('p-qtd').value=p.qtd;
+  document.getElementById('p-val').value=p.val;
+  document.getElementById('p-obs').value=p.obs||'';
+  document.getElementById('m-preco').classList.add('open');
+}
+
+function savePreco(){
+  const cidade=document.getElementById('p-cidade').value.trim();
+  const dur=document.getElementById('p-dur').value;
+  const val=document.getElementById('p-val').value;
+  if(!cidade||!dur||!val){toast('Preencha todos os campos','w');return;}
+  const obj={
+    id:S.editPrecoId||Date.now(),
+    tipo:document.getElementById('p-tipo').value,
+    cidade, dur:parseFloat(dur), qtd:parseInt(document.getElementById('p-qtd').value),
+    val:parseFloat(val), obs:document.getElementById('p-obs').value.trim()
+  };
+  if(S.editPrecoId){
+    const idx=S.precos.findIndex(p=>p.id===S.editPrecoId);
+    S.precos[idx]=obj;
+  } else S.precos.push(obj);
+  save(); closeM('m-preco'); renderPrecos(); toast('Preço salvo!');
+}
+
+function delPreco(id){
+  if(!confirm('Remover este preço?')) return;
+  S.precos=S.precos.filter(p=>p.id!==id); save(); renderPrecos(); toast('Preço removido');
+}
+
+// ══════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════
+function setFilt(f,btn){
+  S.filter=f;
+  document.querySelectorAll('.fc').forEach(c=>c.classList.remove('act'));
+  if(btn) btn.classList.add('act');
+  else {const el=document.querySelector(`.fc[onclick*="'${f}'"]`); if(el) el.classList.add('act');}
+  renderPed();
+}
+
+function cpEmail(id){
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>toast('Copiado!'));
+}
+
+function toast(msg,type='s'){
+  const t=document.getElementById('toast'),ic=document.getElementById('t-ic'),m=document.getElementById('t-msg');
+  t.className='toast t'+type; ic.textContent={s:'✓',w:'!',i:'i'}[type]||'✓'; m.textContent=msg;
+  t.classList.add('show'); clearTimeout(t._to); t._to=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{
+  load();
+  if(S.user){ document.body.classList.add('logged'); doLogin(); }
+});
 </script>
 </body>
 </html>
