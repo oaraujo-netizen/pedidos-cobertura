@@ -91,9 +91,13 @@
   .importar-area { width: 100%; min-height: 180px; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #fafaf9; resize: vertical; }
   .resultado-item { background: #fafaf9; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; border: 1px solid #e5e5e5; }
 
-  .email-tag { display:flex; align-items:center; justify-content:space-between; background:#f5f5f3; border:1px solid #e5e5e5; border-radius:8px; padding:8px 12px; font-size:13px; }
-  .email-tag input { border:none; background:transparent; outline:none; font-size:13px; flex:1; color:#1a1a1a; padding:0; }
-  .email-tag .btn-x { color:#aaa; font-size:16px; }
+  .email-tag { display:flex; align-items:center; justify-content:space-between; background:#f5f5f3; border:1px solid #e5e5e5; border-radius:8px; padding:8px 12px; font-size:13px; gap:8px; }
+  .email-tag span { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#1a1a1a; }
+  .email-tag input { border:none; background:transparent; outline:none; font-size:13px; flex:1; color:#1a1a1a; padding:0; min-width:0; }
+  .email-tag .btn-x { color:#aaa; font-size:18px; flex-shrink:0; line-height:1; }
+  .add-email-row { display:flex; gap:8px; margin-top:6px; }
+  .add-email-row input { flex:1; padding:8px 12px; border:1px solid #ddd; border-radius:8px; font-size:13px; }
+  .section-titulo { font-size:13px; color:#666; margin-bottom:8px; font-weight:500; }
   @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .grid3 { grid-template-columns: 1fr 24px 1fr; } }
 </style>
 </head>
@@ -275,34 +279,24 @@ function aplicarConfig() {
 function renderLista(tipo) {
   const el = document.getElementById("lista-"+tipo);
   if (!cfgEmails[tipo].length) {
-    el.innerHTML = '<p style="font-size:13px;color:#aaa;padding:4px 0">Nenhum email cadastrado.</p>';
+    el.innerHTML = '<p style="font-size:13px;color:#aaa;padding:2px 0">Nenhum email cadastrado.</p>';
     return;
   }
   el.innerHTML = cfgEmails[tipo].map((email, i) => `
     <div class="email-tag">
-      <span style="flex:1;font-size:13px;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${email}</span>
+      <span>${email}</span>
       <button class="btn-x" onclick="removerEmail('${tipo}',${i})" title="Remover">×</button>
     </div>`).join("");
 }
 
-function mostrarNovo(tipo) {
-  document.getElementById("novo-"+tipo).style.display = "block";
-  document.getElementById("btn-add-"+tipo).style.display = "none";
-  setTimeout(() => document.getElementById("input-novo-"+tipo).focus(), 50);
-}
-
-function cancelarNovo(tipo) {
-  document.getElementById("input-novo-"+tipo).value = "";
-  document.getElementById("novo-"+tipo).style.display = "none";
-  document.getElementById("btn-add-"+tipo).style.display = "inline-flex";
-}
-
 function confirmarNovo(tipo) {
-  const val = document.getElementById("input-novo-"+tipo).value.trim();
+  const input = document.getElementById("input-novo-"+tipo);
+  const val = input.value.trim();
   if (!val || !val.includes("@")) { flash("Informe um email válido.","err"); return; }
+  if (cfgEmails[tipo].includes(val)) { flash("Este email já está na lista.","err"); return; }
   cfgEmails[tipo].push(val);
+  input.value = "";
   renderLista(tipo);
-  cancelarNovo(tipo);
 }
 
 function removerEmail(tipo, idx) {
