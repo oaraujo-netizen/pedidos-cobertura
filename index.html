@@ -787,52 +787,59 @@ let gmailToken=null;
 let pendingEmailFn=null;
 
 function initGmailTokenClient(){
-  if(typeof google==='undefined'||!google.accounts?.oauth2) return;
-  gmailTokenClient=google.accounts.oauth2.initTokenClient({
-    client_id: GMAIL_CLIENT_ID,
-    scope: 'https://www.googleapis.com/auth/gmail.send',
-    callback:(resp)=>{
-      if(resp.error){ toast('Erro ao autorizar Gmail: '+resp.error,'w'); return; }
-      gmailToken=resp.access_token;
-      if(pendingEmailFn){ pendingEmailFn(); pendingEmailFn=null; }
-    }
-  });
+  if(typeof google==='undefined'||!google.accounts?.oauth2){
+    setTimeout(initGmailTokenClient,1000); return;
+  }
+  try{
+    gmailTokenClient=google.accounts.oauth2.initTokenClient({
+      client_id:GMAIL_CLIENT_ID,
+      scope:'https://www.googleapis.com/auth/gmail.send',
+      callback:(resp)=>{
+        if(resp.error){console.error('Gmail error:',resp);toast('Erro Gmail: '+resp.error,'w');return;}
+        gmailToken=resp.access_token;
+        if(pendingEmailFn){pendingEmailFn();pendingEmailFn=null;}
+      }
+    });
+  }catch(e){console.error('initGmail failed:',e);}
 }
 
 function withGmailToken(fn){
-  if(gmailToken){ fn(); return; }
+  if(gmailToken){fn();return;}
   pendingEmailFn=fn;
-  if(!gmailTokenClient) initGmailTokenClient();
-  if(gmailTokenClient) gmailTokenClient.requestAccessToken({prompt:''});
-  else { toast('Gmail não disponível','w'); }
+  if(!gmailTokenClient){initGmailTokenClient();setTimeout(()=>withGmailToken(fn),1500);return;}
+  gmailTokenClient.requestAccessToken({prompt:''});
 }
 
-function sendGmail({to, cc, subject, body, onSuccess}){
-  const mime=[
-    `To: ${to}`,
-    cc?`Cc: ${cc}`:'',
-    `Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=UTF-8',
-    'Content-Transfer-Encoding: quoted-printable',
-    '',
-    body.replace(/[^\x20-\x7E\n\r\t]/g, c=>{
-      const bytes=encodeURIComponent(c).match(/%[0-9A-F]{2}/g)||[];
-      return bytes.map(b=>'='+b.slice(1)).join('');
-    })
-  ].filter(l=>l!==false&&l!==undefined).join('\r\n');
-
-  const encoded=btoa(unescape(encodeURIComponent(mime)))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-
-  fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
-    method:'POST',
-    headers:{'Authorization':'Bearer '+gmailToken,'Content-Type':'application/json'},
-    body:JSON.stringify({raw:encoded})
-  }).then(r=>{
-    if(r.ok){ if(onSuccess) onSuccess(); }
-    else r.json().then(e=>toast('Erro ao enviar: '+(e.error?.message||'desconhecido'),'w'));
-  }).catch(()=>toast('Falha de conexão','w'));
+function sendGmail({to,cc,subject,body,onSuccess}){
+  if(!gmailToken){toast('Sem token Gmail','w');return;}
+  try{
+    // Encode subject and body as base64 UTF-8
+    const enc=new TextEncoder();
+    const toB64=(str)=>btoa(String.fromCharCode(...enc.encode(str)));
+    const subB64=toB64(subject);
+    const bodyB64=toB64(body);
+    const raw=[
+      'To: '+to,
+      cc?'Cc: '+cc:'',
+      'Subject: =?UTF-8?B?'+subB64+'?=',
+      'MIME-Version: 1.0',
+      'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      bodyB64
+    ].filter(Boolean).join('\r\n');
+    // Encode the full raw message for the Gmail API
+    const rawB64=btoa(String.fromCharCode(...enc.encode(raw)))
+      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+gmailToken,'Content-Type':'application/json'},
+      body:JSON.stringify({raw:rawB64})
+    }).then(r=>{
+      if(r.ok){if(onSuccess)onSuccess();}
+      else r.json().then(e=>{console.error('Gmail error:',e);toast('Erro: '+(e.error?.message||'ver console'),'w');});
+    }).catch(e=>{console.error('fetch error:',e);toast('Falha de conexão','w');});
+  }catch(e){console.error('sendGmail error:',e);toast('Erro: '+e.message,'w');}
 }
 
 function buildCcList(extraEmails){
