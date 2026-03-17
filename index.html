@@ -606,7 +606,7 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
         <hr class="dvd"/>
         <div class="fg fg2">
           <div class="fgrp"><label class="fl">Para (Comitti) *</label><input type="email" class="fc2" id="com-para" value="marcelo@8mmbrasil.com.br" placeholder="comitti@email.com"/></div>
-          <div class="fgrp"><label class="fl">CC</label><input type="email" class="fc2" id="com-cc" placeholder="opcional"/></div>
+          <div class="fgrp"><label class="fl">CC (editável)</label><input type="text" class="fc2" id="com-cc" placeholder="emails separados por vírgula"/></div>
         </div>
         <div class="fgrp"><label class="fl">Prévia</label><div class="eprev" id="com-prev"></div></div>
       </div>
@@ -1546,10 +1546,10 @@ function openEnviar(){
   comittiExtras=[];
   const fila=S.pedidos.filter(p=>p.status==='novo').sort((a,b)=>a.data>b.data?1:-1);
   document.getElementById('com-sub').textContent=`${fila.length} pedido(s) na fila`;
-  // Clear manual fields
   ['cm-data','cm-hora','cm-casa','cm-visit','cm-comp'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('com-para').value='marcelo@8mmbrasil.com.br';
-  document.getElementById('com-cc').value='';
+  const solEmails=fila.map(p=>p.solEmail).filter(Boolean);
+  document.getElementById('com-cc').value=buildCcList([...solEmails]).join(', ');
   renderComList(fila);
   document.getElementById('m-comitti').classList.add('open');
 }
@@ -1601,18 +1601,14 @@ function removeComExtra(idx){
 
 function enviarComitti(){
   const para=document.getElementById('com-para').value.trim();
-  const ccExtra=document.getElementById('com-cc').value.trim();
+  const cc=document.getElementById('com-cc').value.trim();
   const body=document.getElementById('com-prev').textContent;
   if(!para){toast('Informe o email do Comitti','w');return;}
-  // Collect solicitante emails from all pedidos na fila
-  const fila=S.pedidos.filter(p=>p.status==='novo');
-  const solEmails=fila.map(p=>p.solEmail).filter(Boolean);
-  const ccList=buildCcList([...solEmails, ccExtra]).filter(v=>v!==para).join(',');
   const subject='Pedidos de Cobertura — LiveCapture';
 
   withGmailToken(()=>{
     toast('Enviando ao Comitti...','i');
-    sendGmail({to:para, cc:ccList, subject, body,
+    sendGmail({to:para, cc, subject, body,
       onSuccess:()=>{
         closeM('m-comitti'); toast('Email enviado ao Comitti ✓');
       }
