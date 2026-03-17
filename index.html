@@ -1569,18 +1569,46 @@ function parseWa(){
   const text=document.getElementById('wa-inp').value;
   if(!text.trim()){toast('Cole uma lista primeiro','w');return;}
   S.waGames=[];
+
   text.split('\n').map(l=>l.trim()).filter(Boolean).forEach(line=>{
-    const dateM=line.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
-    const timeM=line.match(/(\d{1,2})[hH:](\d{0,2})/);
-    const vsM=line.match(/([A-Za-zÀ-ÿ\s\.]{3,}?)\s+(?:x|vs\.?)\s+([A-Za-zÀ-ÿ\s\.]{3,})/i);
+    // Remove common prefixes like "1.", "1-", bullets
+    const clean=line.replace(/^\d+[\.\-\)]\s*/,'').replace(/^[-•*]\s*/,'');
+
+    // Date: dd/mm, dd/mm/yy, dd/mm/yyyy, dd-mm, etc
+    const dateM=clean.match(/(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{2,4}))?/);
+
+    // Time: 15h00, 15:00, 15h, 15H30
+    const timeM=clean.match(/(\d{1,2})[hH:](\d{2})|\b(\d{1,2})[hH]\b/);
+
+    // Teams: "Time A x Time B" or "Time A vs Time B" or "Time A X Time B"
+    // More flexible: allows numbers in team names (ex: "Sub-20")
+    const vsM=clean.match(/([A-Za-zÀ-ÿ0-9][A-Za-zÀ-ÿ0-9\s\.\-]{1,}?)\s+[xXvV][sS]?\.?\s+([A-Za-zÀ-ÿ0-9][A-Za-zÀ-ÿ0-9\s\.\-]{1,})/);
+
     if(dateM&&vsM){
-      const d=dateM[1].padStart(2,'0'),m=dateM[2].padStart(2,'0');
+      const d=dateM[1].padStart(2,'0');
+      const m=dateM[2].padStart(2,'0');
       const y=dateM[3]?(dateM[3].length===2?'20'+dateM[3]:dateM[3]):new Date().getFullYear();
-      const hora=timeM?`${timeM[1].padStart(2,'0')}:${(timeM[2]||'00').padStart(2,'0')}`:'';
-      S.waGames.push({date:`${y}-${m}-${d}`,hora,casa:vsM[1].trim(),visit:vsM[2].trim()});
+
+      let hora='';
+      if(timeM){
+        if(timeM[1]&&timeM[2]) hora=`${timeM[1].padStart(2,'0')}:${timeM[2]}`;
+        else if(timeM[3]) hora=`${timeM[3].padStart(2,'0')}:00`;
+      }
+
+      const casa=vsM[1].trim().replace(/\s+/g,' ');
+      const visit=vsM[2].trim().replace(/\s+/g,' ');
+
+      // Avoid matching the date part as a team name
+      if(casa.length>=2&&visit.length>=2){
+        S.waGames.push({date:`${y}-${m}-${d}`,hora,casa,visit});
+      }
     }
   });
-  if(!S.waGames.length){toast('Nenhum jogo identificado','w');return;}
+
+  if(!S.waGames.length){
+    toast('Nenhum jogo identificado. Exemplos aceitos: "18/03 21h Corinthians x Palmeiras"','w');
+    return;
+  }
   document.getElementById('wa-gl').innerHTML=S.waGames.map((g,i)=>`
     <div class="wg sel" id="wg-${i}" onclick="document.getElementById('wg-${i}').classList.toggle('sel')">
       <div class="wck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
