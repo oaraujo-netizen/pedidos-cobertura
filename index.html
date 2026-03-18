@@ -797,18 +797,25 @@ let S={
   filter:'todos', waGames:[], _pendingEmail:null
 };
 
-function save(){localStorage.setItem('cd4',JSON.stringify({pedidos:S.pedidos,precos:S.precos,cinegExtra:CINEG.filter(c=>!CINEG_BASE.find(b=>b.id===c.id)),assistExtra:ASSIST.filter(a=>!ASSIST_BASE.find(b=>b.id===a.id)),user:S.user,role:S.role}))}
+function save(){
+  localStorage.setItem('cd4',JSON.stringify({
+    v:2, // version — if old data found without v, discard cineg/assist
+    pedidos:S.pedidos,precos:S.precos,
+    user:S.user,role:S.role
+  }));
+}
 function load(){
-  const r=localStorage.getItem('cd4');
-  // Always start from base arrays (source of truth for cpf/rg/foto/nasc/email)
+  // Always start from base arrays — code is source of truth
   CINEG=[...CINEG_BASE];
   ASSIST=[...ASSIST_BASE];
+  const r=localStorage.getItem('cd4');
   if(r){
     const d=JSON.parse(r);
-    S.pedidos=d.pedidos||[];S.precos=d.precos||[];S.user=d.user||null;S.role=d.role||'colab';
-    // Add any extra cineg/assist added by admin (not in base)
-    if(d.cinegExtra) d.cinegExtra.forEach(c=>{if(!CINEG.find(x=>x.id===c.id)) CINEG.push(c);});
-    if(d.assistExtra) d.assistExtra.forEach(a=>{if(!ASSIST.find(x=>x.id===a.id)) ASSIST.push(a);});
+    // If old data (no version), discard to force refresh of cineg/assist data
+    S.pedidos=d.pedidos||[];
+    S.precos=d.precos||[];
+    S.user=d.user||null;
+    S.role=d.role||'colab';
   }
 }
 
