@@ -1447,6 +1447,9 @@ function confirmarAtrib(){
   const c=gc(cineg); const a=ga(document.getElementById('a-assist').value);
 
   const isExterior = p.local === 'exterior';
+  console.log('DEBUG cineg:', JSON.stringify({id:c?.id, nome:c?.nome, cpf:c?.cpf, rg:c?.rg, email:c?.email}));
+  console.log('DEBUG assist:', JSON.stringify({id:a?.id, nome:a?.nome, cpf:a?.cpf, rg:a?.rg, email:a?.email}));
+  console.log('DEBUG CINEG array:', CINEG.map(x=>({id:x.id,nome:x.nome,hasCpf:!!x.cpf})));
   const docs=[
     c?.cpf        ? `CPF: ${c.cpf}` : '',
     c?.rg         ? `RG: ${c.rg}` : '',
