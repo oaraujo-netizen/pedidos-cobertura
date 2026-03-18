@@ -438,6 +438,13 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
           <div class="fgrp"><label class="fl">Horário do jogo *</label><input type="time" class="fc2" id="f-hora" oninput="calcChegada()"/></div>
         </div>
         <div class="fgrp"><label class="fl">Competição / Evento</label><input type="text" class="fc2" id="f-comp" placeholder="Campeonato Paulista, Copa SP..."/></div>
+        <div class="fgrp">
+          <label class="fl">Local do evento</label>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="to sel" id="loc-br" onclick="setLocal('brasil')" style="flex:1;padding:8px">🇧🇷 Brasil</button>
+            <button type="button" class="to" id="loc-ext" onclick="setLocal('exterior')" style="flex:1;padding:8px">✈️ Exterior</button>
+          </div>
+        </div>
         <div class="fg fg2">
           <div class="fgrp"><label class="fl">Time da Casa *</label><input type="text" class="fc2" id="f-casa" placeholder="Nome do time"/></div>
           <div class="fgrp"><label class="fl">Time Visitante *</label><input type="text" class="fc2" id="f-visit" placeholder="Nome do time"/></div>
@@ -827,28 +834,42 @@ function withGmailToken(fn){
   gmailTokenClient.requestAccessToken({prompt:''});
 }
 
-function sendGmail({to,cc,subject,body,onSuccess}){
+function sendGmail({to,cc,subject,body,attachments,onSuccess}){
   if(!gmailToken){toast('Sem token Gmail','w');return;}
   try{
     const enc=new TextEncoder();
-    const toB64url=(str)=>btoa(String.fromCharCode(...enc.encode(str)))
-      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-
+    const toB64url=(str)=>{
+      const bytes=enc.encode(str);
+      let bin='';bytes.forEach(b=>bin+=String.fromCharCode(b));
+      return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    };
     const subB64=btoa(String.fromCharCode(...enc.encode(subject)));
-    const lines=[
-      'To: '+to,
-      cc?'Cc: '+cc:'',
-      'Subject: =?UTF-8?B?'+subB64+'?=',
-      'MIME-Version: 1.0',
-      'Content-Type: text/plain; charset=UTF-8',
-      '',
-      body
-    ].filter(v=>v!==false&&v!==undefined).join('\r\n');
+    let raw;
+
+    if(attachments&&attachments.length){
+      const boundary='LCap_'+Date.now();
+      const bodyB64=toB64url(body);
+      const parts=[
+        '--'+boundary,
+        'Content-Type: text/plain; charset=UTF-8',
+        'Content-Transfer-Encoding: base64','',bodyB64
+      ];
+      attachments.forEach(att=>{
+        const b64=att.foto.split(',')[1];
+        const mime=att.foto.split(';')[0].split(':')[1];
+        const fname=att.nome.replace(/\s+/g,'_')+'.jpg';
+        parts.push('--'+boundary,`Content-Type: ${mime}; name="${fname}"`,'Content-Transfer-Encoding: base64',`Content-Disposition: attachment; filename="${fname}"`,`Content-Id: <${fname}>`,'',b64);
+      });
+      parts.push('--'+boundary+'--');
+      raw=['To: '+to,cc?'Cc: '+cc:'','Subject: =?UTF-8?B?'+subB64+'?=','MIME-Version: 1.0','Content-Type: multipart/mixed; boundary="'+boundary+'"','',parts.join('\r\n')].filter(Boolean).join('\r\n');
+    } else {
+      raw=['To: '+to,cc?'Cc: '+cc:'','Subject: =?UTF-8?B?'+subB64+'?=','MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','',body].filter(Boolean).join('\r\n');
+    }
 
     fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
       method:'POST',
       headers:{'Authorization':'Bearer '+gmailToken,'Content-Type':'application/json'},
-      body:JSON.stringify({raw:toB64url(lines)})
+      body:JSON.stringify({raw:toB64url(raw)})
     }).then(r=>{
       if(r.ok){if(onSuccess)onSuccess();}
       else r.json().then(e=>{console.error('Gmail error:',e);toast('Erro: '+(e.error?.message||'ver console'),'w');});
@@ -1227,6 +1248,7 @@ function openNovo(){
   document.getElementById('f-solnom').value=S.user?.name||'';
   document.getElementById('f-solem').value=S.user?.email||'';
   document.querySelectorAll('.to').forEach(b=>b.classList.remove('sel'));
+  setLocal('brasil');
   document.getElementById('m-novo').classList.add('open');
 }
 
@@ -1235,7 +1257,13 @@ function calcChegada(){
 }
 
 function closeM(id){document.getElementById(id).classList.remove('open');}
-function selTipo(t,btn){S.selTipo=t;document.querySelectorAll('.to').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+function selTipo(t,btn){S.selTipo=t;document.querySelectorAll('.type-opt,.to:not(#loc-br):not(#loc-ext)').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+let pedidoLocal='brasil';
+function setLocal(v){
+  pedidoLocal=v;
+  document.getElementById('loc-br').classList.toggle('sel',v==='brasil');
+  document.getElementById('loc-ext').classList.toggle('sel',v==='exterior');
+}
 
 function saveP(more){
   const solNome=document.getElementById('f-solnom').value.trim();
@@ -1250,7 +1278,7 @@ function saveP(more){
     id:S.editId||Date.now(), solNome, nucleo,
     solEmail:document.getElementById('f-solem').value.trim()||S.user?.email||'',
     data, hora, comp:document.getElementById('f-comp').value.trim(),
-    casa, visit, tipo:S.selTipo,
+    casa, visit, tipo:S.selTipo, local:pedidoLocal,
     prodNome:document.getElementById('f-prodnm').value.trim(),
     prodCont:document.getElementById('f-prodct').value.trim(),
     repNome:document.getElementById('f-repnm').value.trim(),
@@ -1393,18 +1421,27 @@ function confirmarAtrib(){
   const arr=calcArrival(p.hora);
   const c=gc(cineg); const a=ga(document.getElementById('a-assist').value);
 
-  // Build email content
+  const isExterior = p.local === 'exterior';
   const docs=[
     c?.cpf        ? `CPF: ${c.cpf}` : '',
     c?.rg         ? `RG: ${c.rg}` : '',
     c?.nasc       ? `Data de Nascimento: ${fd(c.nasc)}` : '',
-    c?.passaporte ? `Passaporte: ${c.passaporte}` : '',
+    isExterior && c?.passaporte ? `Passaporte: ${c.passaporte}` : '',
     c?.email      ? `Email: ${c.email}` : '',
   ].filter(Boolean).join('\n');
 
-  const corpo=`Olá, ${c?c.nome:''}!
+  // Assistente docs
+  const aDocs= a ? [
+    a?.cpf   ? `CPF: ${a.cpf}` : '',
+    a?.rg    ? `RG: ${a.rg}` : '',
+    a?.nasc  ? `Data de Nascimento: ${fd(a.nasc)}` : '',
+    isExterior && a?.passaporte ? `Passaporte: ${a.passaporte}` : '',
+    a?.email ? `Email: ${a.email}` : '',
+  ].filter(Boolean).join('\n') : '';
 
-Você foi confirmado(a) para a seguinte cobertura:
+  const corpo=`Olá!
+
+Seguem os dados de confirmação da cobertura:
 
 🎬 EVENTO
 ${p.casa} x ${p.visit}${p.comp?'\nCompetição: '+p.comp:''}
@@ -1412,32 +1449,44 @@ Data: ${fd(p.data)}
 Horário do jogo: ${p.hora}
 
 ⏰ HORÁRIO DE CHEGADA: ${arr||'—'} (3 horas antes do início)
-${a?'\n👥 ASSISTENTE: '+a.nome:''}
+Tipo de cobertura: ${p.tipo||'—'}
 ${p.prodNome?'\n🎙 PRODUTOR: '+p.prodNome+(p.prodCont?' — '+p.prodCont:''):''}
 ${p.repNome?'\n📺 REPÓRTER: '+p.repNome+(p.repCont?' — '+p.repCont:''):''}
 ${p.obs?'\n📝 OBSERVAÇÕES: '+p.obs:''}
-Tipo de cobertura: ${p.tipo||'—'}
 ${'─'.repeat(40)}
-📋 DADOS DO CINEGRAFISTA
+🎥 CINEGRAFISTA: ${c?c.nome:'—'}
 ${docs||'(sem dados cadastrados)'}
+${a?`\n${'─'.repeat(40)}\n👥 ASSISTENTE: ${a.nome}\n${aDocs||'(sem dados cadastrados)'}` :''}
 ${'─'.repeat(40)}
 
 Qualquer dúvida, entre em contato.
 
 LiveCapture — Gestão de Coberturas`;
 
-  const para=c?.email||'';
-  const ccList=buildCcList([]).filter(v=>v!==para);
+  // Para: solicitante. CC: cinegrafista + assistente + fixos + admin logado
+  const para=p.solEmail||'';
+  const fixedCc=['sstamm@livemode.com','oaraujo@livemode.com'];
+  const adminLogado=(S.user&&S.role==='admin')?S.user.email:'';
+  const ccEmails=[c?.email||'', a?.email||'', ...fixedCc, adminLogado]
+    .filter(v=>v&&v!==para)
+    .filter((v,i,arr)=>arr.indexOf(v)===i);
+  const ccList=ccEmails.join(', ');
   const subject=`[LiveCapture] Confirmação de cobertura — ${p.casa} x ${p.visit}`;
 
-  // Store pending send data
-  S._pendingEmail={para, cc:ccList.join(','), subject, body:corpo, pedidoId:p.id, cineg, assist:document.getElementById('a-assist').value, chegada:arr};
+  S._pendingEmail={
+    para, cc:ccList, subject, body:corpo,
+    pedidoId:p.id, cineg, assist:document.getElementById('a-assist').value, chegada:arr,
+    fotosCineg: [
+      c?.foto ? {nome: c.nome, foto: c.foto} : null,
+      a?.foto ? {nome: a.nome, foto: a.foto} : null
+    ].filter(Boolean)
+  };
 
   // Populate editable preview modal
-  document.getElementById('ec-title').textContent='Confirmar envio ao Cinegrafista';
+  document.getElementById('ec-title').textContent='Confirmar envio ao Solicitante';
   document.getElementById('ec-sub').textContent=`${p.casa} x ${p.visit} — ${fd(p.data)} ${p.hora}`;
   document.getElementById('ec-para-inp').value=para;
-  document.getElementById('ec-cc-inp').value=ccList.join(', ');
+  document.getElementById('ec-cc-inp').value=ccList;
   document.getElementById('ec-assunto-inp').value=subject;
   document.getElementById('ec-prev').value=corpo;
 
@@ -1530,12 +1579,13 @@ function enviarEmailCineg(){
   const subject=document.getElementById('ec-assunto-inp').value.trim();
   const body=document.getElementById('ec-prev').value;
   if(!para){toast('Informe o email do destinatário','w');return;}
+  const d=S._pendingEmail;
+  const attachments=d?.fotosCineg||[];
 
   const doSend=()=>{
     toast('Enviando email...','i');
-    sendGmail({to:para, cc, subject, body,
+    sendGmail({to:para, cc, subject, body, attachments,
       onSuccess:()=>{
-        const d=S._pendingEmail;
         if(d&&d.pedidoId){
           const p=S.pedidos.find(x=>x.id===d.pedidoId);
           if(p){p.cineg=d.cineg; p.assist=d.assist; p.chegada=d.chegada; p.status='conf';}
