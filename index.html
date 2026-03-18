@@ -862,67 +862,59 @@ function sendGmail({to,cc,subject,body,attachments,onSuccess}){
   if(!gmailToken){toast('Sem token Gmail','w');return;}
   try{
     const enc=new TextEncoder();
-    const toB64url=(str)=>{
-      const bytes=enc.encode(str);
+    const bytesToB64url=(bytes)=>{
       let bin='';bytes.forEach(b=>bin+=String.fromCharCode(b));
       return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
     };
+    const strToB64url=(str)=>bytesToB64url(enc.encode(str));
     const subB64=btoa(String.fromCharCode(...enc.encode(subject)));
+
     let raw;
+    const headers=[
+      'To: '+to,
+      cc?'Cc: '+cc:'',
+      'Subject: =?UTF-8?B?'+subB64+'?=',
+      'MIME-Version: 1.0',
+    ].filter(Boolean);
 
     if(attachments&&attachments.length){
       const boundary='LCap_'+Date.now();
-      // Use multipart/mixed with text first, then attachments
-      const textPart=[
+      headers.push('Content-Type: multipart/mixed; boundary="'+boundary+'"');
+      // Encode body as base64 to handle emojis and special chars safely
+      const bodyB64=strToB64url(body);
+      const parts=[
         '--'+boundary,
         'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: 8bit',
+        'Content-Transfer-Encoding: base64',
         '',
-        body
-      ].join('\r\n');
-
-      const attParts=attachments.map(att=>{
-        const b64=att.foto.split(',')[1];
+        bodyB64,
+      ];
+      attachments.forEach(att=>{
+        const b64data=att.foto.split(',')[1];
         const mime=att.foto.split(';')[0].split(':')[1];
-        const fname=att.nome.replace(/\s+/g,'_')+'.jpg';
-        return [
+        const fname=att.nome.replace(/[^a-zA-Z0-9_]/g,'_')+'.jpg';
+        parts.push(
           '--'+boundary,
           'Content-Type: '+mime+'; name="'+fname+'"',
           'Content-Transfer-Encoding: base64',
           'Content-Disposition: attachment; filename="'+fname+'"',
           '',
-          b64
-        ].join('\r\n');
+          b64data
+        );
       });
-
-      const closingBoundary='--'+boundary+'--';
-      const mimeBody=[textPart,...attParts,closingBoundary].join('\r\n');
-
-      raw=[
-        'To: '+to,
-        cc?'Cc: '+cc:'',
-        'Subject: =?UTF-8?B?'+subB64+'?=',
-        'MIME-Version: 1.0',
-        'Content-Type: multipart/mixed; boundary="'+boundary+'"',
-        '',
-        mimeBody
-      ].filter(Boolean).join('\r\n');
+      parts.push('--'+boundary+'--');
+      raw=headers.join('\r\n')+'\r\n\r\n'+parts.join('\r\n');
     } else {
-      raw=[
-        'To: '+to,
-        cc?'Cc: '+cc:'',
-        'Subject: =?UTF-8?B?'+subB64+'?=',
-        'MIME-Version: 1.0',
-        'Content-Type: text/plain; charset=UTF-8',
-        '',
-        body
-      ].filter(Boolean).join('\r\n');
+      const bodyB64=strToB64url(body);
+      headers.push('Content-Type: text/plain; charset=UTF-8');
+      headers.push('Content-Transfer-Encoding: base64');
+      raw=headers.join('\r\n')+'\r\n\r\n'+bodyB64;
     }
 
     fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
       method:'POST',
       headers:{'Authorization':'Bearer '+gmailToken,'Content-Type':'application/json'},
-      body:JSON.stringify({raw:toB64url(raw)})
+      body:JSON.stringify({raw:strToB64url(raw)})
     }).then(r=>{
       if(r.ok){if(onSuccess)onSuccess();}
       else r.json().then(e=>{console.error('Gmail error:',e);toast('Erro: '+(e.error?.message||'ver console'),'w');});
