@@ -1542,35 +1542,6 @@ function confirmarTerc(){
   document.getElementById('m-email-cineg').classList.add('open');
 }
 
-function buildEmailCineg(p){
-  const c=gc(p.cineg); const a=ga(p.assist);
-  const corpo=`Olá, ${c?c.nome:''}!
-
-Você foi confirmado(a) para a seguinte cobertura:
-
-🎬 EVENTO
-${p.casa} x ${p.visit}
-${p.comp?'Competição: '+p.comp:''}
-Data: ${fd(p.data)}
-Horário do jogo: ${p.hora}
-
-⏰ HORÁRIO DE CHEGADA: ${p.chegada||calcArrival(p.hora)||'—'} (3 horas antes do início)
-
-${a?'👥 ASSISTENTE: '+a.nome+'\n':''}
-${p.prodNome?'🎙 PRODUTOR: '+p.prodNome+(p.prodCont?' — '+p.prodCont:'')+'\n':''}
-${p.repNome?'📺 REPÓRTER: '+p.repNome+(p.repCont?' — '+p.repCont:'')+'\n':''}
-${p.obs?'📝 OBSERVAÇÕES: '+p.obs+'\n':''}
-Tipo de cobertura: ${p.tipo}
-
-Qualquer dúvida, entre em contato.
-
-LiveCapture — Gestão de Coberturas`;
-
-  document.getElementById('ec-prev').textContent=corpo;
-  document.getElementById('ec-sub').textContent=`Email para ${c?c.nome:'cinegrafista'}`;
-  document.getElementById('ec-para').value=c?.email||'';
-  document.getElementById('ec-cc').value='';
-}
 
 function buildEmailTerc(p){
   const corpo=`Olá, ${p.solNome}!
