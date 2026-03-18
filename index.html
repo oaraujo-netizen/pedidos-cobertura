@@ -797,28 +797,18 @@ let S={
   filter:'todos', waGames:[], _pendingEmail:null
 };
 
-function save(){localStorage.setItem('cd4',JSON.stringify({pedidos:S.pedidos,precos:S.precos,cineg:CINEG,assist:ASSIST,user:S.user,role:S.role}))}
+function save(){localStorage.setItem('cd4',JSON.stringify({pedidos:S.pedidos,precos:S.precos,cinegExtra:CINEG.filter(c=>!CINEG_BASE.find(b=>b.id===c.id)),assistExtra:ASSIST.filter(a=>!ASSIST_BASE.find(b=>b.id===a.id)),user:S.user,role:S.role}))}
 function load(){
   const r=localStorage.getItem('cd4');
+  // Always start from base arrays (source of truth for cpf/rg/foto/nasc/email)
+  CINEG=[...CINEG_BASE];
+  ASSIST=[...ASSIST_BASE];
   if(r){
     const d=JSON.parse(r);
     S.pedidos=d.pedidos||[];S.precos=d.precos||[];S.user=d.user||null;S.role=d.role||'colab';
-    // Merge saved data with base — base wins for cpf/rg/foto/nasc/email (code is source of truth)
-    if(d.cineg&&d.cineg.length){
-      CINEG=CINEG_BASE.map(base=>{
-        const saved=d.cineg.find(s=>s.id===base.id)||{};
-        return {...saved, ...base, foto: base.foto||saved.foto||null};
-      });
-      // Keep any extra cineg added by admin
-      d.cineg.filter(s=>!CINEG_BASE.find(b=>b.id===s.id)).forEach(s=>CINEG.push(s));
-    }
-    if(d.assist&&d.assist.length){
-      ASSIST=ASSIST_BASE.map(base=>{
-        const saved=d.assist.find(s=>s.id===base.id)||{};
-        return {...saved, ...base, foto: base.foto||saved.foto||null};
-      });
-      d.assist.filter(s=>!ASSIST_BASE.find(b=>b.id===s.id)).forEach(s=>ASSIST.push(s));
-    }
+    // Add any extra cineg/assist added by admin (not in base)
+    if(d.cinegExtra) d.cinegExtra.forEach(c=>{if(!CINEG.find(x=>x.id===c.id)) CINEG.push(c);});
+    if(d.assistExtra) d.assistExtra.forEach(a=>{if(!ASSIST.find(x=>x.id===a.id)) ASSIST.push(a);});
   }
 }
 
