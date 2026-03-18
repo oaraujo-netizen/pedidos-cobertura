@@ -1477,11 +1477,13 @@ LiveCapture — Gestão de Coberturas`;
 
   // Para: solicitante. CC: cinegrafista + assistente + sstamm + oaraujo + admin logado
   const para=p.solEmail||'';
-  const fixedCc=['sstamm@livemode.com','oaraujo@livemode.com'];
-  const adminLogado=(S.user&&S.role==='admin'&&!fixedCc.includes(S.user.email))?S.user.email:'';
-  const ccEmails=[c?.email||'', a?.email||'', ...fixedCc, adminLogado]
-    .filter(v=>v&&v!==para)
-    .filter((v,i,arr)=>arr.indexOf(v)===i);
+  const ccEmails=[
+    c?.email||'',           // cinegrafista
+    a?.email||'',           // assistente (se tiver)
+    'sstamm@livemode.com',  // fixo
+    'oaraujo@livemode.com', // fixo
+    (S.user&&S.role==='admin'&&S.user.email!=='sstamm@livemode.com'&&S.user.email!=='oaraujo@livemode.com')?S.user.email:'' // admin logado se não for um dos fixos
+  ].filter(v=>v&&v!==para).filter((v,i,arr)=>arr.indexOf(v)===i);
   const ccList=ccEmails.join(', ');
   const subject=`[LiveCapture] Confirmação de cobertura — ${p.casa} x ${p.visit}`;
 
