@@ -1447,49 +1447,42 @@ function confirmarAtrib(){
   const c=gc(cineg); const a=ga(document.getElementById('a-assist').value);
 
   const isExterior = p.local === 'exterior';
-  console.log('DEBUG cineg:', JSON.stringify({id:c?.id, nome:c?.nome, cpf:c?.cpf, rg:c?.rg, email:c?.email}));
-  console.log('DEBUG assist:', JSON.stringify({id:a?.id, nome:a?.nome, cpf:a?.cpf, rg:a?.rg, email:a?.email}));
-  console.log('DEBUG CINEG array:', CINEG.map(x=>({id:x.id,nome:x.nome,hasCpf:!!x.cpf})));
-  const docs=[
-    c?.cpf        ? `CPF: ${c.cpf}` : '',
-    c?.rg         ? `RG: ${c.rg}` : '',
-    c?.nasc       ? `Data de Nascimento: ${fd(c.nasc)}` : '',
-    isExterior && c?.passaporte ? `Passaporte: ${c.passaporte}` : '',
-    c?.email      ? `Email: ${c.email}` : '',
-  ].filter(Boolean).join('\n');
 
-  // Assistente docs
-  const aDocs= a ? [
-    a?.cpf   ? `CPF: ${a.cpf}` : '',
-    a?.rg    ? `RG: ${a.rg}` : '',
-    a?.nasc  ? `Data de Nascimento: ${fd(a.nasc)}` : '',
-    isExterior && a?.passaporte ? `Passaporte: ${a.passaporte}` : '',
-    a?.email ? `Email: ${a.email}` : '',
-  ].filter(Boolean).join('\n') : '';
+  function buildDocs(person){
+    if(!person) return '(sem dados cadastrados)';
+    const lines=[];
+    if(person.cpf)  lines.push('CPF: '+person.cpf);
+    if(person.rg)   lines.push('RG: '+person.rg);
+    if(person.nasc) lines.push('Data de Nascimento: '+fd(person.nasc));
+    if(isExterior && person.passaporte) lines.push('Passaporte: '+person.passaporte);
+    if(person.email) lines.push('Email: '+person.email);
+    return lines.length ? lines.join('\n') : '(sem dados cadastrados)';
+  }
 
-  const corpo=`Olá!
-
-Seguem os dados de confirmação da cobertura:
-
-🎬 EVENTO
-${p.casa} x ${p.visit}${p.comp?'\nCompetição: '+p.comp:''}
-Data: ${fd(p.data)}
-Horário do jogo: ${p.hora}
-
-⏰ HORÁRIO DE CHEGADA: ${arr||'—'} (3 horas antes do início)
-Tipo de cobertura: ${p.tipo||'—'}
-${p.prodNome?'\n🎙 PRODUTOR: '+p.prodNome+(p.prodCont?' — '+p.prodCont:''):''}
-${p.repNome?'\n📺 REPÓRTER: '+p.repNome+(p.repCont?' — '+p.repCont:''):''}
-${p.obs?'\n📝 OBSERVAÇÕES: '+p.obs:''}
-${'─'.repeat(40)}
-🎥 CINEGRAFISTA: ${c?c.nome:'—'}
-${docs||'(sem dados cadastrados)'}
-${a?`\n${'─'.repeat(40)}\n👥 ASSISTENTE: ${a.nome}\n${aDocs||'(sem dados cadastrados)'}` :''}
-${'─'.repeat(40)}
-
-Qualquer dúvida, entre em contato.
-
-LiveCapture — Gestão de Coberturas`;
+  const sep='─'.repeat(40);
+  let corpo = 'Olá!\n\n';
+  corpo += 'Seguem os dados de confirmação da cobertura:\n\n';
+  corpo += '🎬 EVENTO\n';
+  corpo += p.casa+' x '+p.visit+'\n';
+  if(p.comp) corpo += 'Competição: '+p.comp+'\n';
+  corpo += 'Data: '+fd(p.data)+'\n';
+  corpo += 'Horário do jogo: '+p.hora+'\n\n';
+  corpo += '⏰ HORÁRIO DE CHEGADA: '+(arr||'—')+' (3 horas antes do início)\n';
+  corpo += 'Tipo de cobertura: '+(p.tipo||'—')+'\n';
+  if(p.prodNome) corpo += '\n🎙 PRODUTOR: '+p.prodNome+(p.prodCont?' — '+p.prodCont:'')+'\n';
+  if(p.repNome)  corpo += '\n📺 REPÓRTER: '+p.repNome+(p.repCont?' — '+p.repCont:'')+'\n';
+  if(p.obs)      corpo += '\n📝 OBSERVAÇÕES: '+p.obs+'\n';
+  corpo += '\n'+sep+'\n';
+  corpo += '🎥 CINEGRAFISTA: '+(c?c.nome:'—')+'\n';
+  corpo += buildDocs(c)+'\n';
+  if(a){
+    corpo += '\n'+sep+'\n';
+    corpo += '👥 ASSISTENTE: '+a.nome+'\n';
+    corpo += buildDocs(a)+'\n';
+  }
+  corpo += sep+'\n\n';
+  corpo += 'Qualquer dúvida, entre em contato.\n\n';
+  corpo += 'LiveCapture — Gestão de Coberturas';
 
   // Para: solicitante. CC: cinegrafista + assistente + sstamm + oaraujo + admin logado
   const para=p.solEmail||'';
