@@ -872,22 +872,51 @@ function sendGmail({to,cc,subject,body,attachments,onSuccess}){
 
     if(attachments&&attachments.length){
       const boundary='LCap_'+Date.now();
-      const bodyB64=toB64url(body);
-      const parts=[
+      // Use multipart/mixed with text first, then attachments
+      const textPart=[
         '--'+boundary,
         'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: base64','',bodyB64
-      ];
-      attachments.forEach(att=>{
+        'Content-Transfer-Encoding: 8bit',
+        '',
+        body
+      ].join('\r\n');
+
+      const attParts=attachments.map(att=>{
         const b64=att.foto.split(',')[1];
         const mime=att.foto.split(';')[0].split(':')[1];
         const fname=att.nome.replace(/\s+/g,'_')+'.jpg';
-        parts.push('--'+boundary,`Content-Type: ${mime}; name="${fname}"`,'Content-Transfer-Encoding: base64',`Content-Disposition: attachment; filename="${fname}"`,`Content-Id: <${fname}>`,'',b64);
+        return [
+          '--'+boundary,
+          'Content-Type: '+mime+'; name="'+fname+'"',
+          'Content-Transfer-Encoding: base64',
+          'Content-Disposition: attachment; filename="'+fname+'"',
+          '',
+          b64
+        ].join('\r\n');
       });
-      parts.push('--'+boundary+'--');
-      raw=['To: '+to,cc?'Cc: '+cc:'','Subject: =?UTF-8?B?'+subB64+'?=','MIME-Version: 1.0','Content-Type: multipart/mixed; boundary="'+boundary+'"','',parts.join('\r\n')].filter(Boolean).join('\r\n');
+
+      const closingBoundary='--'+boundary+'--';
+      const mimeBody=[textPart,...attParts,closingBoundary].join('\r\n');
+
+      raw=[
+        'To: '+to,
+        cc?'Cc: '+cc:'',
+        'Subject: =?UTF-8?B?'+subB64+'?=',
+        'MIME-Version: 1.0',
+        'Content-Type: multipart/mixed; boundary="'+boundary+'"',
+        '',
+        mimeBody
+      ].filter(Boolean).join('\r\n');
     } else {
-      raw=['To: '+to,cc?'Cc: '+cc:'','Subject: =?UTF-8?B?'+subB64+'?=','MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','',body].filter(Boolean).join('\r\n');
+      raw=[
+        'To: '+to,
+        cc?'Cc: '+cc:'',
+        'Subject: =?UTF-8?B?'+subB64+'?=',
+        'MIME-Version: 1.0',
+        'Content-Type: text/plain; charset=UTF-8',
+        '',
+        body
+      ].filter(Boolean).join('\r\n');
     }
 
     fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
