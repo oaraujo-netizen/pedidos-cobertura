@@ -336,9 +336,20 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
         <button class="fc" onclick="setFilt('conc',this)">Concluídos</button>
         <input class="si" type="text" placeholder="Buscar evento..." id="si" oninput="renderPed()"/>
       </div>
+      <div id="bulk-bar" style="display:none;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:var(--rs);padding:10px 16px;margin-bottom:12px;display:none;align-items:center;gap:12px">
+        <span id="bulk-count" style="font-size:13px;color:var(--tx2)">0 selecionados</span>
+        <button class="btn brd" onclick="delSelected()" style="margin-left:auto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+          Remover selecionados
+        </button>
+        <button class="btn bg" onclick="clearSel()">Cancelar</button>
+      </div>
       <div class="tw">
         <table>
-          <thead><tr><th>Evento</th><th>Data / Hora</th><th>Tipo</th><th>Solicitante</th><th>Cinegrafista</th><th>Status</th><th>Ações</th></tr></thead>
+          <thead><tr>
+            <th style="width:32px"><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;accent-color:var(--ac)"/></th>
+            <th>Evento</th><th>Data / Hora</th><th>Tipo</th><th>Solicitante</th><th>Cinegrafista</th><th>Status</th><th>Ações</th>
+          </tr></thead>
           <tbody id="ped-tb"></tbody>
         </table>
         <div id="ped-empty" class="es" style="display:none"><span class="ei">📋</span><div class="et">Nenhum pedido encontrado</div></div>
@@ -878,9 +889,8 @@ function sendGmail({to,cc,subject,body,attachments,onSuccess}){
 }
 
 function buildCcList(extraEmails){
+  // CC do Comitti: redes, inovello, bcoutinho + solicitantes dos pedidos
   const fixed=[
-    'oaraujo@livemode.com',
-    'sstamm@livemode.com',
     'redes@livemode.com',
     'inovello@livemode.com',
     'bcoutinho@livemode.com'
@@ -1046,6 +1056,7 @@ function renderDash(){
 function renderPed(){
   const q=(document.getElementById('si').value||'').toLowerCase();
   let items=S.pedidos.filter(p=>{
+    if(p.status==='comitti') return false; // never show in pedidos list
     let show=true;
     if(S.role==='colab') show=p.solEmail===S.user?.email;
     const fm=S.filter==='todos'||p.status===S.filter;
@@ -1058,6 +1069,7 @@ function renderPed(){
   em.style.display='none';
   tb.innerHTML=items.map(p=>`
     <tr class="${p.status==='novo'?'qr':p.status==='terc'?'tr3':''}">
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="row-chk" data-id="${p.id}" onchange="updateBulk()" style="cursor:pointer;accent-color:var(--ac)"/></td>
       <td><div style="font-weight:500">${p.casa} x ${p.visit}</div>
         <div style="font-size:11px;color:var(--tx3)">${p.comp||''} ${p.obs?'· '+p.obs:''}</div></td>
       <td style="font-size:12px;color:var(--tx2)">${fd(p.data)}<br/>${p.hora||''}</td>
@@ -1463,10 +1475,10 @@ Qualquer dúvida, entre em contato.
 
 LiveCapture — Gestão de Coberturas`;
 
-  // Para: solicitante. CC: cinegrafista + assistente + fixos + admin logado
+  // Para: solicitante. CC: cinegrafista + assistente + sstamm + oaraujo + admin logado
   const para=p.solEmail||'';
   const fixedCc=['sstamm@livemode.com','oaraujo@livemode.com'];
-  const adminLogado=(S.user&&S.role==='admin')?S.user.email:'';
+  const adminLogado=(S.user&&S.role==='admin'&&!fixedCc.includes(S.user.email))?S.user.email:'';
   const ccEmails=[c?.email||'', a?.email||'', ...fixedCc, adminLogado]
     .filter(v=>v&&v!==para)
     .filter((v,i,arr)=>arr.indexOf(v)===i);
@@ -1607,11 +1619,10 @@ let comittiExtras=[];
 
 function openEnviar(){
   comittiExtras=[];
-  const fila=S.pedidos.filter(p=>p.status==='novo').sort((a,b)=>a.data>b.data?1:-1);
+  const fila=S.pedidos.filter(p=>p.status==='comitti').sort((a,b)=>a.data>b.data?1:-1);
   document.getElementById('com-sub').textContent=`${fila.length} pedido(s) na fila`;
   ['cm-data','cm-hora','cm-casa','cm-visit','cm-comp'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('com-para').value='marcelo@8mmbrasil.com.br';
-  // Reset edited flags so default message is applied
   document.getElementById('com-assunto').dataset.edited='';
   document.getElementById('com-prev').dataset.edited='';
   const solEmails=fila.map(p=>p.solEmail).filter(Boolean);
@@ -1669,14 +1680,14 @@ function addJogoComitti(){
     manual:true
   });
   ['cm-data','cm-hora','cm-casa','cm-visit','cm-comp'].forEach(id=>document.getElementById(id).value='');
-  const fila=S.pedidos.filter(p=>p.status==='novo').sort((a,b)=>a.data>b.data?1:-1);
+  const fila=S.pedidos.filter(p=>p.status==='comitti').sort((a,b)=>a.data>b.data?1:-1);
   renderComList(fila);
   toast(`${casa} x ${visit} adicionado!`);
 }
 
 function removeComExtra(idx){
   comittiExtras.splice(idx,1);
-  const fila=S.pedidos.filter(p=>p.status==='novo').sort((a,b)=>a.data>b.data?1:-1);
+  const fila=S.pedidos.filter(p=>p.status==='comitti').sort((a,b)=>a.data>b.data?1:-1);
   renderComList(fila);
 }
 
@@ -1691,7 +1702,8 @@ function enviarComitti(){
     toast('Enviando ao Comitti...','i');
     sendGmail({to:para, cc, subject, body,
       onSuccess:()=>{
-        closeM('m-comitti'); toast('Email enviado ao Comitti ✓');
+        S.pedidos=S.pedidos.filter(p=>p.status!=='comitti'); comittiExtras=[];
+        save(); closeM('m-comitti'); renderAll(); renderPed(); toast('Email enviado ao Comitti ✓');
       }
     });
   });
@@ -1799,11 +1811,11 @@ function importWa(){
       solEmail:S.user?.email||'',
       data:g.date, hora:g.hora, comp:g.comp||'', casa:g.casa, visit:g.visit, tipo:'',
       prodNome:'', prodCont:'', repNome:'', repCont:'', obs:'',
-      status:'novo', cineg:'', assist:'', chegada:'', ts:Date.now()
+      status:'comitti', cineg:'', assist:'', chegada:'', ts:Date.now()
     });
   });
   save(); closeM('m-wa'); renderAll(); renderPed();
-  toast(`${sel.length} jogo(s) adicionados à fila!`);
+  toast(`${sel.length} jogo(s) adicionados à fila do Comitti!`);
 }
 
 // ══════════════════════════════════════════════════
@@ -1857,6 +1869,39 @@ function delPreco(id){
 // ══════════════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════════════
+function updateBulk(){
+  const chks=document.querySelectorAll('.row-chk');
+  const sel=[...chks].filter(c=>c.checked);
+  const bar=document.getElementById('bulk-bar');
+  const allChk=document.getElementById('chk-all');
+  if(sel.length>0){
+    bar.style.display='flex';
+    document.getElementById('bulk-count').textContent=`${sel.length} selecionado(s)`;
+    allChk.indeterminate=sel.length>0&&sel.length<chks.length;
+    allChk.checked=sel.length===chks.length;
+  } else {
+    bar.style.display='none';
+    allChk.checked=false; allChk.indeterminate=false;
+  }
+}
+function toggleAll(cb){
+  document.querySelectorAll('.row-chk').forEach(c=>c.checked=cb.checked);
+  updateBulk();
+}
+function clearSel(){
+  document.querySelectorAll('.row-chk').forEach(c=>c.checked=false);
+  const allChk=document.getElementById('chk-all');
+  if(allChk){allChk.checked=false;allChk.indeterminate=false;}
+  document.getElementById('bulk-bar').style.display='none';
+}
+function delSelected(){
+  const ids=[...document.querySelectorAll('.row-chk:checked')].map(c=>Number(c.dataset.id));
+  if(!ids.length) return;
+  if(!confirm(`Remover ${ids.length} pedido(s)?`)) return;
+  S.pedidos=S.pedidos.filter(p=>!ids.includes(p.id));
+  save(); clearSel(); renderAll(); renderPed(); toast(`${ids.length} pedido(s) removidos`);
+}
+
 function setFilt(f,btn){
   S.filter=f;
   document.querySelectorAll('.fc').forEach(c=>c.classList.remove('act'));
