@@ -587,34 +587,44 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
 
     <!-- SETUP DASHBOARD -->
     <div class="view act" id="view-setup-dash">
-      <div class="sg" style="margin-bottom:20px">
-        <div class="sc"><div class="sv" id="ss-total">0</div><div class="sl">Total</div></div>
-        <div class="sc"><div class="sv" style="color:var(--ye)" id="ss-novo">0</div><div class="sl">Pendentes</div></div>
-        <div class="sc"><div class="sv" style="color:var(--ac)" id="ss-conf">0</div><div class="sl">Confirmados</div></div>
-        <div class="sc"><div class="sv" style="color:var(--pu)" id="ss-conc">0</div><div class="sl">Concluídos</div></div>
+      <div class="sg" style="margin-bottom:22px">
+        <div class="sc bl"><div class="sl">Total</div><div class="sv" id="ss-total">0</div><div class="ss">Instalações registradas</div></div>
+        <div class="sc am"><div class="sl">Pendentes</div><div class="sv" id="ss-novo">0</div><div class="ss">Aguardando técnico</div></div>
+        <div class="sc gn"><div class="sl">Confirmados</div><div class="sv" id="ss-conf">0</div><div class="ss">Técnico definido</div></div>
+        <div class="sc pu"><div class="sl">Concluídos</div><div class="sv" id="ss-conc">0</div><div class="ss">Instalação realizada</div></div>
       </div>
+      <div id="banner-setup-novos" style="display:none" class="banner am" style="margin-bottom:22px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--am)" stroke-width="2" style="width:20px;height:20px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div class="bi"><div class="bt" id="banner-setup-t" style="color:var(--am)">Instalações aguardando técnico</div><div class="bsub">Acesse Instalações para atribuir o técnico responsável</div></div>
+        <button class="btn bam" onclick="goSetupView('setup-pedidos',null)">Ver pendentes</button>
+      </div>
+      <div class="sh"><div class="stitle">Próximas instalações</div></div>
       <div class="tw">
         <table>
-          <thead><tr><th>Evento</th><th>Local</th><th>Data</th><th>Layout</th><th>Técnico</th><th>Status</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Evento / Empresa</th><th>Local</th><th>Data / Hora</th><th>Layout</th><th>Técnico</th><th>Status</th><th>Ações</th></tr></thead>
           <tbody id="setup-dash-tb"></tbody>
         </table>
-        <div id="setup-dash-empty" class="es" style="display:none"><span class="ei">🖥️</span><div class="et">Nenhuma instalação</div></div>
+        <div id="setup-dash-empty" class="es" style="display:none"><span class="ei">🖥️</span><div class="et">Nenhuma instalação ainda</div><div>Clique em "Nova Instalação" para começar</div></div>
       </div>
     </div>
 
     <!-- SETUP PEDIDOS -->
     <div class="view" id="view-setup-pedidos">
+      <div class="sh" style="margin-bottom:14px">
+        <div class="stitle">Todas as Instalações</div>
+      </div>
       <div class="tw">
         <table>
-          <thead><tr><th>Evento</th><th>Local</th><th>Data</th><th>Layout</th><th>Técnico</th><th>Status</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Evento / Empresa</th><th>Local</th><th>Data / Hora</th><th>Layout</th><th>Técnico</th><th>Status</th><th>Ações</th></tr></thead>
           <tbody id="setup-ped-tb"></tbody>
         </table>
-        <div id="setup-ped-empty" class="es" style="display:none"><span class="ei">📋</span><div class="et">Nenhum pedido</div></div>
+        <div id="setup-ped-empty" class="es" style="display:none"><span class="ei">📋</span><div class="et">Nenhuma instalação encontrada</div></div>
       </div>
     </div>
 
     <!-- SETUP TÉCNICOS -->
     <div class="view" id="view-setup-tec">
+      <div class="sh" style="margin-bottom:14px"><div class="stitle">Técnicos de Instalação</div></div>
       <div id="setup-tec-grid" class="pg"></div>
     </div>
 
@@ -2920,6 +2930,12 @@ function renderSetupAll(){
   const nb=p.filter(x=>x.status==='novo').length;
   const el=document.getElementById('nb-setup');
   el.textContent=nb; el.style.display=nb?'inline':'none';
+  const banner=document.getElementById('banner-setup-novos');
+  if(banner){
+    banner.style.display=nb>0?'flex':'none';
+    const bt=document.getElementById('banner-setup-t');
+    if(bt) bt.textContent=`${nb} instalação(ões) aguardando técnico`;
+  }
   renderSetupDash();
 }
 
