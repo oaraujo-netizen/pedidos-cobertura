@@ -572,7 +572,7 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
 </div>
 
 <!-- ═══ LIVESETUP VIEWS ═══ -->
-<div id="livesetup-module" style="display:none;margin-left:230px;flex:1;flex-direction:column;min-height:100vh">
+<div id="livesetup-module" style="display:none;margin-left:230px;flex:1;flex-direction:column;min-height:100vh;position:relative;z-index:1">
   <header class="topbar">
     <div class="tbtitle" id="setup-pg-title">Dashboard</div>
     <div class="tbr">
@@ -2887,8 +2887,8 @@ function switchModule(mod){
     ?'flex:1;padding:6px 4px;border-radius:6px;border:1px solid rgba(0,230,58,.3);background:rgba(0,230,58,.1);color:var(--ac);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit'
     :'flex:1;padding:6px 4px;border-radius:6px;border:1px solid var(--b);background:var(--sf2);color:var(--tx2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit';
   // Toggle main content
-  document.querySelector('.main').style.display=isSetup?'none':'flex';
-  document.getElementById('livesetup-module').style.display=isSetup?'flex':'none';
+  document.querySelector('.main').style.display=isSetup?'none':'block';
+  document.getElementById('livesetup-module').style.display=isSetup?'block':'none';
   // Update sidebar subtitle
   const logoSub=document.querySelector('.logo-sub span');
   if(logoSub){
