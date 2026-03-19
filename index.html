@@ -216,6 +216,7 @@ textarea.fc2{resize:vertical}
 #login{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center}
 .sidebar{display:none!important}
 .main{display:none!important}
+#livesetup-module{display:none!important}
 .logged .sidebar{display:flex!important}
 .logged .main{display:block!important}
 /* ANIM */
@@ -225,7 +226,7 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
 /* INFO ROW */
 .irow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .itag{font-size:11px;color:var(--tx3);padding:2px 8px;border-radius:20px;border:1px solid var(--b);background:var(--sf2)}
-@media(max-width:900px){.sidebar{display:none}.main{margin-left:0}.sg{grid-template-columns:repeat(2,1fr)}.pg{grid-template-columns:1fr}.tg{grid-template-columns:repeat(2,1fr)}.fg2,.fg3{grid-template-columns:1fr}}
+@media(max-width:900px){.sidebar{display:none!important}.main{margin-left:0!important}#livesetup-module{margin-left:0!important}.sg{grid-template-columns:repeat(2,1fr)}.pg{grid-template-columns:1fr}.tg{grid-template-columns:repeat(2,1fr)}.fg2,.fg3{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -2887,8 +2888,10 @@ function switchModule(mod){
     ?'flex:1;padding:6px 4px;border-radius:6px;border:1px solid rgba(0,230,58,.3);background:rgba(0,230,58,.1);color:var(--ac);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit'
     :'flex:1;padding:6px 4px;border-radius:6px;border:1px solid var(--b);background:var(--sf2);color:var(--tx2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit';
   // Toggle main content
-  document.querySelector('.main').style.display=isSetup?'none':'block';
-  document.getElementById('livesetup-module').style.display=isSetup?'block':'none';
+  document.querySelector('.main').style.cssText=isSetup?'display:none!important':'display:block!important';
+  document.getElementById('livesetup-module').style.cssText=isSetup
+    ?'display:block!important;margin-left:230px;min-height:100vh'
+    :'display:none!important';
   // Update sidebar subtitle
   const logoSub=document.querySelector('.logo-sub span');
   if(logoSub){
