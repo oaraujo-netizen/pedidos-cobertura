@@ -2039,7 +2039,7 @@ function exportRelat(){
 }
 
 function renderHist(){
-  const items=S.pedidos.filter(p=>['conc','cancelado','terc'].includes(p.status)).sort((a,b)=>a.data<b.data?1:-1);
+  const items=S.pedidos.filter(p=>['conc','cancelado','terc','comitti'].includes(p.status)).sort((a,b)=>a.data<b.data?1:-1);
   const tb=document.getElementById('hist-tb'), em=document.getElementById('hist-empty');
   if(!items.length){tb.innerHTML='';em.style.display='block';return;}
   em.style.display='none';
