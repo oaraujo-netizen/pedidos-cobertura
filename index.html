@@ -1378,12 +1378,9 @@ function sendGmail({to,cc,subject,body,attachments,onSuccess}){
 }
 
 function buildCcList(extraEmails){
-  // CC do Comitti: redes, inovello, bcoutinho + solicitantes dos pedidos
-  const fixed=[
-    'redes@livemode.com',
-    'inovello@livemode.com',
-    'bcoutinho@livemode.com'
-  ];
+  const fixed=['oaraujo@livemode.com','sstamm@livemode.com','bcoutinho@livemode.com','inovello@livemode.com'];
+  const logado=S.user?.email||'';
+  if(logado&&!fixed.includes(logado)) fixed.push(logado);
   return [...fixed,...(extraEmails||[])].filter((v,i,a)=>v&&a.indexOf(v)===i);
 }
 
