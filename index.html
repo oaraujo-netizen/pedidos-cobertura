@@ -2890,6 +2890,7 @@ function switchModule(mod){
   document.querySelector('.main').style.display=isSetup?'none':'flex';
   document.getElementById('livesetup-module').style.display=isSetup?'flex':'none';
   // Update sidebar subtitle
+  const logoSub=document.querySelector('.logo-sub span');
   if(logoSub){
     logoSub.textContent=isSetup?'● LiveSetup':'● LiveCapture';
     logoSub.style.color=isSetup?'#3b82f6':'var(--ac)';
