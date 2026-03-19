@@ -2204,9 +2204,15 @@ function saveP(more){
         +'Local: '+(pedidoLocal==='exterior'?'Exterior':'Brasil')+'\n'
         +'Solicitante: '+solNome+' ('+nucleo+')\n'
         +'\nAcesse o LiveCapture para atribuir o cinegrafista.';
+      // Para: oaraujo + sstamm + admin logado (sem duplicatas)
+      const adminLogado=S.user?.email||'';
+      const toList=['oaraujo@livemode.com','sstamm@livemode.com'];
+      if(adminLogado&&!toList.includes(adminLogado)) toList.push(adminLogado);
+      // CC: solicitante
+      const solEmail=document.getElementById('f-solem').value.trim()||'';
       sendGmail({
-        to:'oaraujo@livemode.com',
-        cc:'sstamm@livemode.com, producao_executiva@livemode.com',
+        to:toList.join(', '),
+        cc:solEmail||'',
         subject:'[LiveCapture] Novo pedido — '+casa+' x '+visit+' ('+fd(data)+')',
         body:notifBody,
         onSuccess:()=>{}
@@ -2884,8 +2890,11 @@ function switchModule(mod){
   document.querySelector('.main').style.display=isSetup?'none':'flex';
   document.getElementById('livesetup-module').style.display=isSetup?'flex':'none';
   // Update sidebar subtitle
-  document.querySelector('.logo-sub span').textContent=isSetup?'● LiveSetup':'● LiveCapture';
-  document.querySelector('.logo-sub span').style.color=isSetup?'#3b82f6':'var(--ac)';
+  const logoSub=document.querySelector('.logo-sub span');
+  if(logoSub){
+    logoSub.textContent=isSetup?'● LiveSetup':'● LiveCapture';
+    logoSub.style.color=isSetup?'#3b82f6':'var(--ac)';
+  }
   if(isSetup){loadSetup();renderSetupAll();goSetupView('setup-dash',null);}
 }
 
