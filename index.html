@@ -216,12 +216,12 @@ textarea.fc2{resize:vertical}
 #login{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center}
 .sidebar{display:none!important}
 .main{display:none!important}
+#livesetup-module{display:none!important}
 .logged .sidebar{display:flex!important}
-.logged .main{display:block!important}
-#capture-topbar,#capture-content{display:none}
-.logged #capture-topbar{display:flex}
-.logged #capture-content{display:block}
-#livesetup-module{display:none}
+.logged .main{display:block!important;margin-left:230px}
+.logged #livesetup-module{display:none!important}
+#capture-topbar,#capture-content{display:flex}
+#capture-content{display:block}
 /* ANIM */
 @keyframes ri{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 tbody tr{animation:ri .18s ease both}
@@ -570,6 +570,10 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
       </div>
     </div>
 
+
+  </div>
+</div>
+
 <!-- ═══ LIVESETUP VIEWS ═══ -->
 <div id="livesetup-module" style="display:none">
   <header class="topbar">
@@ -628,8 +632,6 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
 
   </div>
 </div>
-
-</div><!-- END .main -->
 
 <!-- ═══ MODAL: NOVA INSTALAÇÃO ═══ -->
 <div class="mo" id="m-setup-novo">
@@ -2896,9 +2898,18 @@ function switchModule(mod){
     :'flex:1;padding:6px 4px;border-radius:6px;border:1px solid var(--b);background:var(--sf2);color:var(--tx2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit';
   // Toggle main content
   // Show/hide sections inside .main
-  document.getElementById('capture-topbar').style.display=isSetup?'none':'flex';
-  document.getElementById('capture-content').style.display=isSetup?'none':'block';
-  document.getElementById('livesetup-module').style.display=isSetup?'block':'none';
+  const main=document.querySelector('.main');
+  const lsm=document.getElementById('livesetup-module');
+  if(isSetup){
+    main.style.setProperty('display','none','important');
+    lsm.style.setProperty('display','block','important');
+    lsm.style.marginLeft='230px';
+    lsm.style.minHeight='100vh';
+    lsm.style.flex='1';
+  } else {
+    main.style.setProperty('display','block','important');
+    lsm.style.setProperty('display','none','important');
+  }
   // Update sidebar subtitle
   const logoSub=document.querySelector('.logo-sub span');
   if(logoSub){
