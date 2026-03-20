@@ -217,6 +217,7 @@ textarea.fc2{resize:vertical}
 .sidebar{display:none!important}
 .main{display:none!important}
 #livesetup-module{display:none!important}
+.logged #livesetup-module.active{display:block!important;flex:1;min-height:100vh;min-width:0;overflow-x:hidden;margin-left:230px}
 .logged .sidebar{display:flex!important}
 .logged .main{display:block!important}
 /* ANIM */
@@ -573,7 +574,7 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
 </div>
 
 <!-- ═══ LIVESETUP VIEWS ═══ -->
-<div id="livesetup-module" style="display:none;margin-left:230px;flex:1;flex-direction:column;min-height:100vh;position:relative;z-index:1">
+<div id="livesetup-module" style="display:none;position:relative;z-index:1">
   <header class="topbar">
     <div class="tbtitle" id="setup-pg-title">Dashboard</div>
     <div class="tbr">
@@ -2895,10 +2896,10 @@ function switchModule(mod){
     ?'flex:1;padding:6px 4px;border-radius:6px;border:1px solid rgba(0,230,58,.3);background:rgba(0,230,58,.1);color:var(--ac);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit'
     :'flex:1;padding:6px 4px;border-radius:6px;border:1px solid var(--b);background:var(--sf2);color:var(--tx2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit';
   // Toggle main content
-  document.querySelector('.main').style.cssText=isSetup?'display:none!important':'display:block!important';
-  document.getElementById('livesetup-module').style.cssText=isSetup
-    ?'display:block!important;margin-left:230px;min-height:100vh'
-    :'display:none!important';
+  document.querySelector('.main').style.display=isSetup?'none':'block';
+  const lsm=document.getElementById('livesetup-module');
+  if(isSetup){lsm.classList.add('active');lsm.style.removeProperty('display');}
+  else{lsm.classList.remove('active');lsm.style.display='none';}
   // Update sidebar subtitle
   const logoSub=document.querySelector('.logo-sub span');
   if(logoSub){
