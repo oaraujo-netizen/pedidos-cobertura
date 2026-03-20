@@ -216,11 +216,12 @@ textarea.fc2{resize:vertical}
 #login{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center}
 .sidebar{display:none!important}
 .main{display:none!important}
-#livesetup-module{display:none!important}
 .logged .sidebar{display:flex!important}
 .logged .main{display:block!important}
-.logged.setup-mode .main{display:none!important}
-.logged.setup-mode #livesetup-module{display:block!important;margin-left:230px;min-height:100vh;min-width:0;overflow-x:hidden}
+#capture-topbar,#capture-content{display:none}
+.logged #capture-topbar{display:flex}
+.logged #capture-content{display:block}
+#livesetup-module{display:none}
 /* ANIM */
 @keyframes ri{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 tbody tr{animation:ri .18s ease both}
@@ -312,7 +313,7 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
 
 <!-- MAIN -->
 <div class="main">
-  <header class="topbar">
+  <header class="topbar" id="capture-topbar">
     <div class="tbtitle" id="pg-title">Dashboard</div>
     <div class="tbr">
       <button class="btn bg" onclick="withGmailToken(()=>syncFromSheet())" title="Sincronizar pedidos com Google Sheets">
@@ -330,9 +331,7 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
     </div>
   </header>
 
-  <div class="content">
-
-    <!-- DASHBOARD -->
+  <div class="content" id="capture-content">
     <div class="view act" id="view-dash">
       <div class="sg" id="sg-admin">
         <div class="sc am"><div class="sl">Novos Pedidos</div><div class="sv" id="st-novo">0</div><div class="ss">Aguardando atribuição</div></div>
@@ -571,11 +570,8 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
       </div>
     </div>
 
-  </div>
-</div>
-
 <!-- ═══ LIVESETUP VIEWS ═══ -->
-<div id="livesetup-module" style="display:none;position:relative;z-index:1">
+<div id="livesetup-module" style="display:none">
   <header class="topbar">
     <div class="tbtitle" id="setup-pg-title">Dashboard</div>
     <div class="tbr">
@@ -632,6 +628,8 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
 
   </div>
 </div>
+
+</div><!-- END .main -->
 
 <!-- ═══ MODAL: NOVA INSTALAÇÃO ═══ -->
 <div class="mo" id="m-setup-novo">
@@ -2897,8 +2895,10 @@ function switchModule(mod){
     ?'flex:1;padding:6px 4px;border-radius:6px;border:1px solid rgba(0,230,58,.3);background:rgba(0,230,58,.1);color:var(--ac);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit'
     :'flex:1;padding:6px 4px;border-radius:6px;border:1px solid var(--b);background:var(--sf2);color:var(--tx2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit';
   // Toggle main content
-  if(isSetup){document.body.classList.add('setup-mode');}
-  else{document.body.classList.remove('setup-mode');}
+  // Show/hide sections inside .main
+  document.getElementById('capture-topbar').style.display=isSetup?'none':'flex';
+  document.getElementById('capture-content').style.display=isSetup?'none':'block';
+  document.getElementById('livesetup-module').style.display=isSetup?'block':'none';
   // Update sidebar subtitle
   const logoSub=document.querySelector('.logo-sub span');
   if(logoSub){
