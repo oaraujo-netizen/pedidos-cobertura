@@ -1226,17 +1226,70 @@ async function deletePedidoFromSheet(id){
 
 async function syncFromSheet(){
   try{
-    toast('Sincronizando pedidos...','i');
+    toast('Sincronizando...','i');
     await ensureSheetHeader();
     const pedidos=await loadPedidosFromSheet();
     S.pedidos=pedidos;
+    // Sync precos too
+    await syncPrecosFromSheet();
     save();
-    renderAll(); renderPed();
-    toast('Pedidos sincronizados ✓');
+    renderAll(); renderPed(); renderPrecos();
+    toast('Sincronizado ✓');
   }catch(e){
     console.error('syncFromSheet:',e);
     toast('Erro ao sincronizar','w');
   }
+}
+
+// ══ PRECOS SHEET ══
+const PRECOS_COLS=['id','tipo','cidade','dur','qtd','val','obs'];
+
+async function ensurePrecosHeader(){
+  const res=await sheetsRequest('GET',`/values/Precos!A1:G1`);
+  if(!res?.values?.length){
+    await sheetsRequest('PUT',`/values/Precos!A1:G1?valueInputOption=RAW`,{values:[PRECOS_COLS]});
+  }
+}
+
+async function syncPrecosFromSheet(){
+  try{
+    await ensurePrecosHeader();
+    const res=await sheetsRequest('GET',`/values/Precos!A2:G10000`);
+    if(!res?.values) return;
+    S.precos=res.values.filter(r=>r[0]).map(r=>{
+      const obj={};
+      PRECOS_COLS.forEach((k,i)=>{obj[k]=r[i]||'';});
+      obj.dur=parseFloat(obj.dur)||0;
+      obj.qtd=parseInt(obj.qtd)||1;
+      obj.val=parseFloat(obj.val)||0;
+      obj.id=obj.id||String(Date.now()+Math.random());
+      return obj;
+    });
+  }catch(e){console.error('syncPrecosFromSheet:',e);}
+}
+
+async function savePrecoToSheet(p){
+  try{
+    await ensurePrecosHeader();
+    const res=await sheetsRequest('GET',`/values/Precos!A2:A10000`);
+    const rows=res?.values||[];
+    const rowIdx=rows.findIndex(r=>r[0]===String(p.id));
+    const row=PRECOS_COLS.map(k=>p[k]!==undefined?String(p[k]):'');
+    const range=rowIdx>=0?`Precos!A${rowIdx+2}:G${rowIdx+2}`:`Precos!A${rows.length+2}:G${rows.length+2}`;
+    await sheetsRequest('PUT',`/values/${range}?valueInputOption=RAW`,{values:[row]});
+  }catch(e){console.error('savePrecoToSheet:',e);}
+}
+
+async function deletePrecoFromSheet(id){
+  try{
+    const res=await sheetsRequest('GET',`/values/Precos!A2:A10000`);
+    const rows=res?.values||[];
+    const rowIdx=rows.findIndex(r=>r[0]===String(id));
+    if(rowIdx<0) return;
+    await sheetsRequest('PUT',`/values/Precos!A${rowIdx+2}:G${rowIdx+2}?valueInputOption=RAW`,{
+      values:[PRECOS_COLS.map(()=>'')]
+    });
+  }catch(e){console.error('deletePrecoFromSheet:',e);}
 }
 
 // Override save to also push to Sheets
@@ -2864,10 +2917,13 @@ function savePreco(){
     S.precos[idx]=obj;
   } else S.precos.push(obj);
   save(); closeM('m-preco'); renderPrecos(); toast('Preço salvo!');
+  if(gmailToken) savePrecoToSheet(obj);
 }
 
 function delPreco(id){
+  const p=S.precos.find(x=>x.id===id);
   S.precos=S.precos.filter(p=>p.id!==id); save(); renderPrecos(); toast('Preço removido');
+  if(gmailToken&&p) deletePrecoFromSheet(id);
 }
 
 // ══════════════════════════════════════════════════
