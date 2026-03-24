@@ -1380,7 +1380,9 @@ async function deletePrecoFromSheet(id){
 // Override save to also push to Sheets
 const _saveLocal=function(){
   localStorage.setItem('cd4',JSON.stringify({
-    v:2,pedidos:S.pedidos,precos:S.precos,user:S.user,role:S.role
+    v:2,pedidos:S.pedidos,precos:S.precos,
+    cineg:CINEG,assist:ASSIST,
+    user:S.user,role:S.role
   }));
 };
 
@@ -1402,7 +1404,6 @@ async function syncPedidoToSheet(p, deleted=false){
 }
 
 function load(){
-  // Always start from base arrays — code is source of truth
   CINEG=[...CINEG_BASE];
   ASSIST=[...ASSIST_BASE];
   const r=localStorage.getItem('cd4');
@@ -1412,6 +1413,21 @@ function load(){
     S.precos=d.precos||[];
     S.user=d.user||null;
     S.role=d.role||'colab';
+    // Restore edited cineg/assist — merge with base (edited overrides base)
+    if(d.cineg&&d.cineg.length){
+      d.cineg.forEach(saved=>{
+        const idx=CINEG.findIndex(c=>c.id===saved.id);
+        if(idx>=0) CINEG[idx]={...CINEG[idx],...saved};
+        else CINEG.push(saved);
+      });
+    }
+    if(d.assist&&d.assist.length){
+      d.assist.forEach(saved=>{
+        const idx=ASSIST.findIndex(a=>a.id===saved.id);
+        if(idx>=0) ASSIST[idx]={...ASSIST[idx],...saved};
+        else ASSIST.push(saved);
+      });
+    }
   }
 }
 
