@@ -403,7 +403,12 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
         </button>
       </div>
       <div class="pg" id="gc" style="margin-bottom:24px"></div>
-      <div class="sh"><div class="stitle">Assistentes</div></div>
+      <div class="sh"><div class="stitle">Assistentes</div>
+        <button class="btn bp" onclick="openEditAssist(null)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar
+        </button>
+      </div>
       <div class="pg" id="ga"></div>
     </div>
 
@@ -1100,7 +1105,7 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
     </div>
     <div class="mf">
       <button class="btn bg" onclick="closeM('m-cineg')">Cancelar</button>
-      <button class="btn bp" onclick="saveCineg()">
+      <button class="btn bp" id="mc-save-btn" onclick="saveCineg()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg>
         Salvar
       </button>
@@ -1631,11 +1636,27 @@ function renderEquipe(){
   }
   function assistCard(p){
     const tot=S.pedidos.filter(x=>x.assist===p.id).length;
+    const conf=S.pedidos.filter(x=>x.assist===p.id&&x.status==='conf').length;
+    const foto=p.foto?`<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`:`<span style="font-size:16px;font-weight:700;color:#fff">${ini(p.nome)}</span>`;
     return`<div class="pcard">
-      <div class="pch"><div class="pav" style="background:${p.cor};display:flex;align-items:center;justify-content:center"><span style="font-size:16px;font-weight:700;color:#fff">${ini(p.nome)}</span></div>
-      <div><div class="pn">${p.nome}</div></div></div>
+      <div class="pch">
+        <div class="pav" style="background:${p.cor};display:flex;align-items:center;justify-content:center;overflow:hidden">${foto}</div>
+        <div style="flex:1;min-width:0">
+          <div class="pn">${p.nome}</div>
+          ${p.nasc?`<div style="font-size:11px;color:var(--tx3);margin-top:1px">Nasc: ${fd(p.nasc)}</div>`:''}
+        </div>
+        <button class="ib" onclick="openEditAssist('${p.id}')" title="Editar dados" style="flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+      </div>
+      ${p.cpf||p.rg?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        ${p.cpf?`<span class="itag">CPF: ${p.cpf}</span>`:''}
+        ${p.rg?`<span class="itag">RG: ${p.rg}</span>`:''}
+        ${p.email?`<span class="itag">✉ ${p.email}</span>`:''}
+      </div>`:''}
       <div class="pst">
         <div class="ps"><div class="psv">${tot}</div><div class="psl">Total</div></div>
+        <div class="ps"><div class="psv" style="color:var(--gn)">${conf}</div><div class="psl">Conf.</div></div>
       </div>
     </div>`;
   }
@@ -1667,6 +1688,58 @@ function previewFoto(inp){
   r.readAsDataURL(file);
 }
 
+let editAssistId=null;
+let fotoAssistBase64=null;
+
+function openEditAssist(id){
+  editAssistId=id; fotoAssistBase64=null;
+  const a=id?ASSIST.find(x=>x.id===id):null;
+  document.getElementById('mc-title').textContent=a?'Editar Assistente':'Novo Assistente';
+  document.getElementById('mc-nome').value=a?.nome||'';
+  document.getElementById('mc-nasc').value=a?.nasc||'';
+  document.getElementById('mc-cpf').value=a?.cpf||'';
+  document.getElementById('mc-rg').value=a?.rg||'';
+  document.getElementById('mc-email').value=a?.email||'';
+  document.getElementById('mc-tel').value=a?.tel||'';
+  document.getElementById('mc-esp').value='Assistente';
+  const prev=document.getElementById('mc-foto-prev');
+  prev.innerHTML=a?.foto?`<img src="${a.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`:' 👤';
+  fotoAssistBase64=a?.foto||null;
+  // Override save button to use saveAssist
+  document.getElementById('mc-save-btn').onclick=saveAssist;
+  document.getElementById('m-cineg').classList.add('open');
+}
+
+function saveAssist(){
+  const nome=document.getElementById('mc-nome').value.trim();
+  if(!nome){toast('Informe o nome','w');return;}
+  const CORES=['#ec4899','#06b6d4','#f97316','#84cc16','#e879f9','#3b82f6','#22c55e','#f59e0b'];
+  const foto=fotoBase64||fotoAssistBase64||null;
+  if(editAssistId){
+    const a=ASSIST.find(x=>x.id===editAssistId); if(!a) return;
+    a.nome=nome; a.nasc=document.getElementById('mc-nasc').value;
+    a.cpf=document.getElementById('mc-cpf').value;
+    a.rg=document.getElementById('mc-rg').value;
+    a.email=document.getElementById('mc-email').value.trim();
+    a.tel=document.getElementById('mc-tel').value.trim();
+    if(foto) a.foto=foto;
+    toast('Assistente atualizado!');
+  } else {
+    ASSIST.push({
+      id:'a'+Date.now(), nome,
+      nasc:document.getElementById('mc-nasc').value,
+      cpf:document.getElementById('mc-cpf').value,
+      rg:document.getElementById('mc-rg').value,
+      email:document.getElementById('mc-email').value.trim(),
+      tel:document.getElementById('mc-tel').value.trim(),
+      foto:foto||null,
+      cor:CORES[ASSIST.length%CORES.length]
+    });
+    toast('Assistente adicionado!');
+  }
+  save(); closeM('m-cineg'); renderEquipe();
+}
+
 function openEditCineg(id){
   editCinegId=id; fotoBase64=null;
   const c=id?CINEG.find(x=>x.id===id):null;
@@ -1681,6 +1754,7 @@ function openEditCineg(id){
   const prev=document.getElementById('mc-foto-prev');
   prev.innerHTML=c?.foto?`<img src="${c.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`:' 👤';
   fotoBase64=c?.foto||null;
+  document.getElementById('mc-save-btn').onclick=saveCineg;
   document.getElementById('m-cineg').classList.add('open');
 }
 
