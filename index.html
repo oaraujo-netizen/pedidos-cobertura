@@ -397,10 +397,16 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
     <div class="view" id="view-equipe">
       <div class="sh">
         <div class="stitle">Cinegrafistas</div>
-        <button class="btn bp" onclick="openEditCineg(null)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Adicionar
-        </button>
+        <div style="display:flex;gap:8px">
+          <button class="btn bg" onclick="exportEquipeToSheet()" title="Enviar todos os dados para o Google Sheets">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+            Exportar para Sheets
+          </button>
+          <button class="btn bp" onclick="openEditCineg(null)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar
+          </button>
+        </div>
       </div>
       <div class="pg" id="gc" style="margin-bottom:24px"></div>
       <div class="sh"><div class="stitle">Assistentes</div>
@@ -1268,6 +1274,29 @@ async function syncEquipeFromSheet(){
       });
     }
   }catch(e){console.error('syncEquipeFromSheet:',e);}
+}
+
+async function exportEquipeToSheet(){
+  if(!gmailToken){toast('Faça login com Google primeiro','w');return;}
+  try{
+    toast('Exportando equipe...','i');
+    // Export cinegrafistas
+    const hCineg=await sheetsRequest('GET',`/values/Cinegrafistas!A1:K1`);
+    if(!hCineg?.values?.length) await sheetsRequest('PUT',`/values/Cinegrafistas!A1:K1?valueInputOption=RAW`,{values:[CINEG_COLS]});
+    for(const c of CINEG){
+      await saveCinegToSheet(c);
+    }
+    // Export assistentes
+    const hAssist=await sheetsRequest('GET',`/values/Assistentes!A1:K1`);
+    if(!hAssist?.values?.length) await sheetsRequest('PUT',`/values/Assistentes!A1:K1?valueInputOption=RAW`,{values:[ASSIST_COLS]});
+    for(const a of ASSIST){
+      await saveAssistToSheet(a);
+    }
+    toast(`Equipe exportada! ${CINEG.length} cinegrafistas + ${ASSIST.length} assistentes ✓`);
+  }catch(e){
+    console.error('exportEquipeToSheet:',e);
+    toast('Erro ao exportar','w');
+  }
 }
 
 async function saveCinegToSheet(c){
