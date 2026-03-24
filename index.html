@@ -1253,25 +1253,35 @@ const ASSIST_COLS=['id','nome','cor','nasc','cpf','rg','passaporte','email','tel
 
 async function syncEquipeFromSheet(){
   try{
-    // Cinegrafistas
     const resCineg=await sheetsRequest('GET',`/values/Cinegrafistas!A1:K10000`);
     if(resCineg?.values?.length>1){
       const rows=resCineg.values.slice(1).filter(r=>r[0]&&r[1]);
-      CINEG=rows.map(r=>{
+      const synced=rows.map(r=>{
         const obj={};
         CINEG_COLS.forEach((k,i)=>{obj[k]=r[i]||'';});
+        // fotoUrl salva na coluna foto do sheet, foto base64 mantida do localStorage
+        obj.fotoUrl=obj.foto||'';
+        // Preserve base64 foto from localStorage if exists
+        const local=CINEG.find(c=>c.id===obj.id);
+        if(local?.foto&&local.foto.startsWith('data:')) obj.foto=local.foto;
+        else if(obj.fotoUrl) obj.foto=obj.fotoUrl;
         return obj;
       });
+      CINEG=synced;
     }
-    // Assistentes
     const resAssist=await sheetsRequest('GET',`/values/Assistentes!A1:K10000`);
     if(resAssist?.values?.length>1){
       const rows=resAssist.values.slice(1).filter(r=>r[0]&&r[1]);
-      ASSIST=rows.map(r=>{
+      const synced=rows.map(r=>{
         const obj={};
         ASSIST_COLS.forEach((k,i)=>{obj[k]=r[i]||'';});
+        obj.fotoUrl=obj.foto||'';
+        const local=ASSIST.find(a=>a.id===obj.id);
+        if(local?.foto&&local.foto.startsWith('data:')) obj.foto=local.foto;
+        else if(obj.fotoUrl) obj.foto=obj.fotoUrl;
         return obj;
       });
+      ASSIST=synced;
     }
   }catch(e){console.error('syncEquipeFromSheet:',e);}
 }
@@ -1281,12 +1291,32 @@ async function exportEquipeToSheet(){
   try{
     toast('Exportando equipe...','i');
 
-    // Export cinegrafistas — clear and rewrite
-    const cinegRows=[CINEG_COLS,...CINEG.map(c=>CINEG_COLS.map(k=>c[k]!==undefined?String(c[k]):''))];
+    // Upload fotos para Drive e salvar URLs
+    for(const c of CINEG){
+      if(c.foto&&c.foto.startsWith('data:')){
+        const url=await uploadFotoDrive('cineg_'+c.id, c.foto);
+        if(url) c.fotoUrl=url;
+      }
+    }
+    for(const a of ASSIST){
+      if(a.foto&&a.foto.startsWith('data:')){
+        const url=await uploadFotoDrive('assist_'+a.id, a.foto);
+        if(url) a.fotoUrl=url;
+      }
+    }
+    save();
+
+    // Export para Sheets com URLs das fotos (sem base64)
+    const cinegRows=[CINEG_COLS,...CINEG.map(c=>{
+      const d={...c,foto:c.fotoUrl||''};
+      return CINEG_COLS.map(k=>d[k]!==undefined?String(d[k]):'');
+    })];
     await sheetsRequest('PUT',`/values/Cinegrafistas!A1:K${cinegRows.length}?valueInputOption=RAW`,{values:cinegRows});
 
-    // Export assistentes — clear and rewrite
-    const assistRows=[ASSIST_COLS,...ASSIST.map(a=>ASSIST_COLS.map(k=>a[k]!==undefined?String(a[k]):''))];
+    const assistRows=[ASSIST_COLS,...ASSIST.map(a=>{
+      const d={...a,foto:a.fotoUrl||''};
+      return ASSIST_COLS.map(k=>d[k]!==undefined?String(d[k]):'');
+    })];
     await sheetsRequest('PUT',`/values/Assistentes!A1:K${assistRows.length}?valueInputOption=RAW`,{values:assistRows});
 
     toast(`Equipe exportada! ${CINEG.length} cinegrafistas + ${ASSIST.length} assistentes ✓`);
@@ -1296,15 +1326,70 @@ async function exportEquipeToSheet(){
   }
 }
 
+// ══ GOOGLE DRIVE FOTOS ══
+const DRIVE_FOLDER_ID='1nbhAPMtmOR3ek-xVMrvnhd0Nf6NFT2By';
+
+async function uploadFotoDrive(nome, base64data){
+  if(!gmailToken||!base64data) return null;
+  try{
+    // Convert base64 to blob
+    const mime=base64data.split(';')[0].split(':')[1]||'image/jpeg';
+    const b64=base64data.split(',')[1];
+    const byteChars=atob(b64);
+    const byteArr=new Uint8Array(byteChars.length);
+    for(let i=0;i<byteChars.length;i++) byteArr[i]=byteChars.charCodeAt(i);
+    const blob=new Blob([byteArr],{type:mime});
+
+    const fname=nome.replace(/[^a-zA-Z0-9_]/g,'_')+'.jpg';
+
+    // Check if file already exists
+    const search=await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${fname}'+and+'${DRIVE_FOLDER_ID}'+in+parents+and+trashed=false`,
+      {headers:{'Authorization':'Bearer '+gmailToken}}
+    );
+    const searchData=await search.json();
+    const existing=searchData.files?.[0];
+
+    let fileId;
+    if(existing){
+      // Update existing file
+      const update=await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=media`,
+        {method:'PATCH',headers:{'Authorization':'Bearer '+gmailToken,'Content-Type':mime},body:blob}
+      );
+      fileId=existing.id;
+    } else {
+      // Create new file with metadata
+      const meta={name:fname,parents:[DRIVE_FOLDER_ID]};
+      const form=new FormData();
+      form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+      form.append('file',blob);
+      const create=await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        {method:'POST',headers:{'Authorization':'Bearer '+gmailToken},body:form}
+      );
+      const createData=await create.json();
+      fileId=createData.id;
+    }
+    if(!fileId) return null;
+    // Make file publicly readable
+    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+gmailToken,'Content-Type':'application/json'},
+      body:JSON.stringify({role:'reader',type:'anyone'})
+    });
+    return `https://drive.google.com/uc?id=${fileId}`;
+  }catch(e){console.error('uploadFotoDrive:',e);return null;}
+}
+
 async function saveCinegToSheet(c){
   try{
-    // Ensure header
     const h=await sheetsRequest('GET',`/values/Cinegrafistas!A1:K1`);
     if(!h?.values?.length) await sheetsRequest('PUT',`/values/Cinegrafistas!A1:K1?valueInputOption=RAW`,{values:[CINEG_COLS]});
     const res=await sheetsRequest('GET',`/values/Cinegrafistas!A2:A10000`);
     const rows=res?.values||[];
     const rowIdx=rows.findIndex(r=>r[0]===String(c.id));
-    const row=CINEG_COLS.map(k=>c[k]!==undefined?String(c[k]):'');
+    const row=CINEG_COLS.map(k=>k==='foto'?'':(c[k]!==undefined?String(c[k]):''));
     const range=rowIdx>=0?`Cinegrafistas!A${rowIdx+2}:K${rowIdx+2}`:`Cinegrafistas!A${rows.length+2}:K${rows.length+2}`;
     await sheetsRequest('PUT',`/values/${range}?valueInputOption=RAW`,{values:[row]});
   }catch(e){console.error('saveCinegToSheet:',e);}
@@ -1317,7 +1402,7 @@ async function saveAssistToSheet(a){
     const res=await sheetsRequest('GET',`/values/Assistentes!A2:A10000`);
     const rows=res?.values||[];
     const rowIdx=rows.findIndex(r=>r[0]===String(a.id));
-    const row=ASSIST_COLS.map(k=>a[k]!==undefined?String(a[k]):'');
+    const row=ASSIST_COLS.map(k=>k==='foto'?'':(a[k]!==undefined?String(a[k]):''));
     const range=rowIdx>=0?`Assistentes!A${rowIdx+2}:K${rowIdx+2}`:`Assistentes!A${rows.length+2}:K${rows.length+2}`;
     await sheetsRequest('PUT',`/values/${range}?valueInputOption=RAW`,{values:[row]});
   }catch(e){console.error('saveAssistToSheet:',e);}
@@ -1451,7 +1536,7 @@ function initGmailTokenClient(){
   try{
     gmailTokenClient=google.accounts.oauth2.initTokenClient({
       client_id:GMAIL_CLIENT_ID,
-      scope:'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets',
+      scope:'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
       callback:(resp)=>{
         if(resp.error){console.error('Gmail error:',resp);toast('Erro Gmail: '+resp.error,'w');return;}
         gmailToken=resp.access_token;
@@ -1890,7 +1975,16 @@ function saveAssist(){
   }
   save(); closeM('m-cineg'); renderEquipe();
   const saved=editAssistId?ASSIST.find(x=>x.id===editAssistId):ASSIST[ASSIST.length-1];
-  if(gmailToken&&saved) saveAssistToSheet(saved);
+  if(gmailToken&&saved){
+    if(foto&&foto.startsWith('data:')){
+      uploadFotoDrive('assist_'+saved.id, foto).then(url=>{
+        if(url){saved.fotoUrl=url;save();}
+        saveAssistToSheet(saved);
+      });
+    } else {
+      saveAssistToSheet(saved);
+    }
+  }
 }
 
 function openEditCineg(id){
@@ -1940,7 +2034,17 @@ function saveCineg(){
   }
   save(); closeM('m-cineg'); renderEquipe();
   const saved=editCinegId?CINEG.find(x=>x.id===editCinegId):CINEG[CINEG.length-1];
-  if(gmailToken&&saved) saveCinegToSheet(saved);
+  if(gmailToken&&saved){
+    // Upload foto para Drive se houver nova foto
+    if(fotoBase64&&fotoBase64.startsWith('data:')){
+      uploadFotoDrive('cineg_'+saved.id, fotoBase64).then(url=>{
+        if(url){saved.fotoUrl=url;save();}
+        saveCinegToSheet(saved);
+      });
+    } else {
+      saveCinegToSheet(saved);
+    }
+  }
 }
 
 function renderPrecos(){
