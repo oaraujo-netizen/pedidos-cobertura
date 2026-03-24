@@ -1230,15 +1230,71 @@ async function syncFromSheet(){
     await ensureSheetHeader();
     const pedidos=await loadPedidosFromSheet();
     S.pedidos=pedidos;
-    // Sync precos too
     await syncPrecosFromSheet();
+    await syncEquipeFromSheet();
     save();
-    renderAll(); renderPed(); renderPrecos();
+    renderAll(); renderPed(); renderPrecos(); renderEquipe();
     toast('Sincronizado ✓');
   }catch(e){
     console.error('syncFromSheet:',e);
     toast('Erro ao sincronizar','w');
   }
+}
+
+// ══ EQUIPE SHEET ══
+const CINEG_COLS=['id','nome','cor','nasc','cpf','rg','passaporte','email','tel','esp','foto'];
+const ASSIST_COLS=['id','nome','cor','nasc','cpf','rg','passaporte','email','tel','esp','foto'];
+
+async function syncEquipeFromSheet(){
+  try{
+    // Cinegrafistas
+    const resCineg=await sheetsRequest('GET',`/values/Cinegrafistas!A1:K10000`);
+    if(resCineg?.values?.length>1){
+      const rows=resCineg.values.slice(1).filter(r=>r[0]&&r[1]);
+      CINEG=rows.map(r=>{
+        const obj={};
+        CINEG_COLS.forEach((k,i)=>{obj[k]=r[i]||'';});
+        return obj;
+      });
+    }
+    // Assistentes
+    const resAssist=await sheetsRequest('GET',`/values/Assistentes!A1:K10000`);
+    if(resAssist?.values?.length>1){
+      const rows=resAssist.values.slice(1).filter(r=>r[0]&&r[1]);
+      ASSIST=rows.map(r=>{
+        const obj={};
+        ASSIST_COLS.forEach((k,i)=>{obj[k]=r[i]||'';});
+        return obj;
+      });
+    }
+  }catch(e){console.error('syncEquipeFromSheet:',e);}
+}
+
+async function saveCinegToSheet(c){
+  try{
+    // Ensure header
+    const h=await sheetsRequest('GET',`/values/Cinegrafistas!A1:K1`);
+    if(!h?.values?.length) await sheetsRequest('PUT',`/values/Cinegrafistas!A1:K1?valueInputOption=RAW`,{values:[CINEG_COLS]});
+    const res=await sheetsRequest('GET',`/values/Cinegrafistas!A2:A10000`);
+    const rows=res?.values||[];
+    const rowIdx=rows.findIndex(r=>r[0]===String(c.id));
+    const row=CINEG_COLS.map(k=>c[k]!==undefined?String(c[k]):'');
+    const range=rowIdx>=0?`Cinegrafistas!A${rowIdx+2}:K${rowIdx+2}`:`Cinegrafistas!A${rows.length+2}:K${rows.length+2}`;
+    await sheetsRequest('PUT',`/values/${range}?valueInputOption=RAW`,{values:[row]});
+  }catch(e){console.error('saveCinegToSheet:',e);}
+}
+
+async function saveAssistToSheet(a){
+  try{
+    const h=await sheetsRequest('GET',`/values/Assistentes!A1:K1`);
+    if(!h?.values?.length) await sheetsRequest('PUT',`/values/Assistentes!A1:K1?valueInputOption=RAW`,{values:[ASSIST_COLS]});
+    const res=await sheetsRequest('GET',`/values/Assistentes!A2:A10000`);
+    const rows=res?.values||[];
+    const rowIdx=rows.findIndex(r=>r[0]===String(a.id));
+    const row=ASSIST_COLS.map(k=>a[k]!==undefined?String(a[k]):'');
+    const range=rowIdx>=0?`Assistentes!A${rowIdx+2}:K${rowIdx+2}`:`Assistentes!A${rows.length+2}:K${rows.length+2}`;
+    await sheetsRequest('PUT',`/values/${range}?valueInputOption=RAW`,{values:[row]});
+  }catch(e){console.error('saveAssistToSheet:',e);}
 }
 
 // ══ PRECOS SHEET ══
@@ -1791,10 +1847,11 @@ function saveAssist(){
     toast('Assistente adicionado!');
   }
   save(); closeM('m-cineg'); renderEquipe();
+  const saved=editAssistId?ASSIST.find(x=>x.id===editAssistId):ASSIST[ASSIST.length-1];
+  if(gmailToken&&saved) saveAssistToSheet(saved);
 }
 
 function openEditCineg(id){
-  editCinegId=id; fotoBase64=null;
   const c=id?CINEG.find(x=>x.id===id):null;
   document.getElementById('mc-title').textContent=c?'Editar Cinegrafista':'Novo Cinegrafista';
   document.getElementById('mc-nome').value=c?.nome||'';
@@ -1840,6 +1897,8 @@ function saveCineg(){
     toast('Cinegrafista adicionado!');
   }
   save(); closeM('m-cineg'); renderEquipe();
+  const saved=editCinegId?CINEG.find(x=>x.id===editCinegId):CINEG[CINEG.length-1];
+  if(gmailToken&&saved) saveCinegToSheet(saved);
 }
 
 function renderPrecos(){
