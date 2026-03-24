@@ -1495,19 +1495,19 @@ function load(){
     S.precos=d.precos||[];
     S.user=d.user||null;
     S.role=d.role||'colab';
-    // Restore edited cineg/assist — merge with base (edited overrides base)
+    // Se tiver cineg/assist salvos no localStorage, usa como fonte de verdade
+    // mas garante que todos os IDs base existam
     if(d.cineg&&d.cineg.length){
-      d.cineg.forEach(saved=>{
-        const idx=CINEG.findIndex(c=>c.id===saved.id);
-        if(idx>=0) CINEG[idx]={...CINEG[idx],...saved};
-        else CINEG.push(saved);
+      // Usa os dados do localStorage, mas adiciona os do base que não existirem
+      CINEG=d.cineg.filter((c,i,arr)=>arr.findIndex(x=>x.id===c.id)===i); // remove duplicatas
+      CINEG_BASE.forEach(base=>{
+        if(!CINEG.find(c=>c.id===base.id)) CINEG.push({...base});
       });
     }
     if(d.assist&&d.assist.length){
-      d.assist.forEach(saved=>{
-        const idx=ASSIST.findIndex(a=>a.id===saved.id);
-        if(idx>=0) ASSIST[idx]={...ASSIST[idx],...saved};
-        else ASSIST.push(saved);
+      ASSIST=d.assist.filter((a,i,arr)=>arr.findIndex(x=>x.id===a.id)===i); // remove duplicatas
+      ASSIST_BASE.forEach(base=>{
+        if(!ASSIST.find(a=>a.id===base.id)) ASSIST.push({...base});
       });
     }
   }
