@@ -1280,22 +1280,19 @@ async function exportEquipeToSheet(){
   if(!gmailToken){toast('Faça login com Google primeiro','w');return;}
   try{
     toast('Exportando equipe...','i');
-    // Export cinegrafistas
-    const hCineg=await sheetsRequest('GET',`/values/Cinegrafistas!A1:K1`);
-    if(!hCineg?.values?.length) await sheetsRequest('PUT',`/values/Cinegrafistas!A1:K1?valueInputOption=RAW`,{values:[CINEG_COLS]});
-    for(const c of CINEG){
-      await saveCinegToSheet(c);
-    }
-    // Export assistentes
-    const hAssist=await sheetsRequest('GET',`/values/Assistentes!A1:K1`);
-    if(!hAssist?.values?.length) await sheetsRequest('PUT',`/values/Assistentes!A1:K1?valueInputOption=RAW`,{values:[ASSIST_COLS]});
-    for(const a of ASSIST){
-      await saveAssistToSheet(a);
-    }
+
+    // Export cinegrafistas — clear and rewrite
+    const cinegRows=[CINEG_COLS,...CINEG.map(c=>CINEG_COLS.map(k=>c[k]!==undefined?String(c[k]):''))];
+    await sheetsRequest('PUT',`/values/Cinegrafistas!A1:K${cinegRows.length}?valueInputOption=RAW`,{values:cinegRows});
+
+    // Export assistentes — clear and rewrite
+    const assistRows=[ASSIST_COLS,...ASSIST.map(a=>ASSIST_COLS.map(k=>a[k]!==undefined?String(a[k]):''))];
+    await sheetsRequest('PUT',`/values/Assistentes!A1:K${assistRows.length}?valueInputOption=RAW`,{values:assistRows});
+
     toast(`Equipe exportada! ${CINEG.length} cinegrafistas + ${ASSIST.length} assistentes ✓`);
   }catch(e){
     console.error('exportEquipeToSheet:',e);
-    toast('Erro ao exportar','w');
+    toast('Erro ao exportar: '+e.message,'w');
   }
 }
 
