@@ -1640,15 +1640,14 @@ function sendGmail({to,cc,subject,body,attachments,onSuccess}){
         );
       });
       parts.push('--'+boundary+'--');
-      raw=[
+      const headers=[
         'To: '+to,
-        cc?'Cc: '+cc:'',
+        cc?'Cc: '+cc:null,
         'Subject: =?UTF-8?B?'+subB64+'?=',
         'MIME-Version: 1.0',
         'Content-Type: multipart/mixed; boundary="'+boundary+'"',
-        '',
-        parts.join('\r\n')
-      ].filter(Boolean).join('\r\n');
+      ].filter(Boolean);
+      raw=headers.join('\r\n')+'\r\n\r\n'+parts.join('\r\n');
     } else {
       const bodyB64=toBase64(body);
       const headers=[
