@@ -1212,6 +1212,13 @@ async function sheetsRequest(method, path, body){
       method, headers:{'Authorization':'Bearer '+gmailToken,'Content-Type':'application/json'},
       body:body?JSON.stringify(body):undefined
     });
+    if(r.status===401){
+      // Token expirado — renova
+      gmailToken=null;
+      await new Promise(res=>{pendingEmailFn=res; gmailTokenClient.requestAccessToken({prompt:''});});
+      // Retry
+      return sheetsRequest(method, path, body);
+    }
     if(!r.ok){const e=await r.json();console.error('Sheets error:',e);return null;}
     return r.json();
   }catch(e){console.error('Sheets fetch error:',e);return null;}
@@ -1655,7 +1662,17 @@ function sendGmail({to,cc,subject,body,attachments,onSuccess}){
       body:JSON.stringify({raw:toBase64url(raw)})
     }).then(r=>{
       if(r.ok){if(onSuccess)onSuccess();}
-      else r.json().then(e=>{console.error('Gmail error:',e);toast('Erro: '+(e.error?.message||'ver console'),'w');});
+      else r.json().then(e=>{
+        console.error('Gmail error:',e);
+        if(e.error?.code===401||e.error?.status==='UNAUTHENTICATED'){
+          // Token expirado — renova e tenta novamente
+          gmailToken=null;
+          toast('Renovando autenticação...','i');
+          withGmailToken(()=>sendGmail({to,cc,subject,body,attachments,onSuccess}));
+        } else {
+          toast('Erro: '+(e.error?.message||'ver console'),'w');
+        }
+      });
     }).catch(e=>{console.error('fetch error:',e);toast('Falha de conexão','w');});
   }catch(e){console.error('sendGmail error:',e);toast('Erro: '+e.message,'w');}
 }
