@@ -2969,7 +2969,9 @@ function enviarEmailCineg(){
       onSuccess:()=>{
         if(d&&d.pedidoId){
           const p=S.pedidos.find(x=>x.id===d.pedidoId);
-          if(p){p.cineg=d.cineg; p.assist=d.assist; p.chegada=d.chegada; p.status='conf';}
+          if(p){p.cineg=d.cineg; p.assist=d.assist; p.chegada=d.chegada; p.status='conf';
+            withGmailToken(()=>syncPedidoToSheet(p));
+          }
         }
         S._pendingEmail=null;
         save(); closeM('m-email-cineg'); renderAll(); renderPed();
