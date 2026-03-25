@@ -2672,14 +2672,16 @@ function delP(id){
   const p=S.pedidos.find(x=>String(x.id)===String(id));
   S.pedidos=S.pedidos.filter(p=>String(p.id)!==String(id));
   save(); renderAll(); renderPed(); toast('Pedido removido');
-  if(p) syncPedidoToSheet(p, true);
+  if(p) withGmailToken(()=>syncPedidoToSheet(p, true));
 }
 
 function delSelected(){
   const ids=[...document.querySelectorAll('.row-chk:checked')].map(c=>String(c.dataset.id));
   if(!ids.length) return;
+  const toDelete=S.pedidos.filter(p=>ids.includes(String(p.id)));
   S.pedidos=S.pedidos.filter(p=>!ids.includes(String(p.id)));
   save(); clearSel(); renderAll(); renderPed(); toast(`${ids.length} pedido(s) removidos`);
+  withGmailToken(()=>toDelete.forEach(p=>syncPedidoToSheet(p, true)));
 }
 
 function setStatus(id,s){
@@ -3231,8 +3233,10 @@ function importWa(){
       return parts.join('\n');
     }).join('\n\n');
 
+    const bodyLines=['Olá, Marcelo!','','Seguem os pedidos de cobertura:','',lines,'','─'.repeat(44),'Qualquer dúvida, entre em contato.','','LiveSuite — Gestão de Coberturas'];
+    const bodyText=bodyLines.join('\n');
+    const bodyHtml=bodyLines.map(l=>l?`<p style="margin:0 0 4px">${l.replace(/\n/g,'<br>')}</p>`:'<br>').join('');
     const subject=`Pedidos de Cobertura — ${new Date().toLocaleDateString('pt-BR')}`;
-    const body=`Olá, Marcelo!\n\nSeguem os pedidos de cobertura:\n\n${lines}\n\n${'─'.repeat(44)}\nQualquer dúvida, entre em contato.\n\nLiveSuite — Gestão de Coberturas`;
     const para='marcelo@8mmbrasil.com.br';
     const cc=buildCcList([S.user?.email||'']).join(', ');
 
@@ -3240,7 +3244,7 @@ function importWa(){
 
     withGmailToken(()=>{
       toast('Enviando email ao Comitti...','i');
-      sendGmail({to:para, cc, subject, body,
+      sendGmail({to:para, cc, subject, body:bodyText,
         onSuccess:()=>{
           // Marca pedidos comitti como enviados
           S.pedidos.filter(p=>p.status==='comitti').forEach(p=>p.status='comitti');
