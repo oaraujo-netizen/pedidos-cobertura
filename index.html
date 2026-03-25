@@ -1812,12 +1812,12 @@ function updateStats(){
   document.getElementById('st-atrib').textContent=p.filter(x=>x.status==='atrib').length;
   document.getElementById('st-conf').textContent=p.filter(x=>x.status==='conf').length;
   document.getElementById('st-terc').textContent=p.filter(x=>x.status==='terc').length;
-  // colab stats (own pedidos)
-  const mine=p.filter(x=>x.solEmail===S.user?.email);
-  document.getElementById('st-meus').textContent=mine.length;
-  document.getElementById('st-mand').textContent=mine.filter(x=>['atrib','conf'].includes(x.status)).length;
-  document.getElementById('st-mconc').textContent=mine.filter(x=>x.status==='conc').length;
-  document.getElementById('st-mterc').textContent=mine.filter(x=>x.status==='terc').length;
+  // colab stats — mostra todos os pedidos
+  const todos=p.filter(x=>x.status!=='comitti');
+  document.getElementById('st-meus').textContent=todos.length;
+  document.getElementById('st-mand').textContent=todos.filter(x=>['atrib','conf'].includes(x.status)).length;
+  document.getElementById('st-mconc').textContent=todos.filter(x=>x.status==='conc').length;
+  document.getElementById('st-mterc').textContent=todos.filter(x=>x.status==='terc').length;
 }
 
 function updateBadge(){
@@ -3621,4 +3621,3 @@ function delSetupP(id){
 </script>
 </body>
 </html>
-                                                                      
