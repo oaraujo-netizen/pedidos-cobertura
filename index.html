@@ -363,7 +363,7 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
       <div class="sh"><div class="stitle">Próximos eventos</div></div>
       <div class="tw">
         <table>
-          <thead><tr><th>Evento</th><th>Data / Hora</th><th>Tipo</th><th>Cinegrafista</th><th>Status</th></tr></thead>
+          <thead><tr><th>Evento</th><th>Data / Hora</th><th>Tipo</th><th>Cinegrafista</th><th>Assistente</th><th>Status</th></tr></thead>
           <tbody id="dash-tb"></tbody>
         </table>
         <div id="dash-empty" class="es" style="display:none"><span class="ei">🎬</span><div class="et">Nenhum pedido ainda</div><div>Clique em "Novo Pedido" para começar</div></div>
@@ -477,7 +477,7 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
       </div>
       <div class="tw">
         <table>
-          <thead><tr><th>Evento</th><th>Data</th><th>Tipo</th><th>Cinegrafista</th><th>Solicitante</th><th>Status</th></tr></thead>
+          <thead><tr><th>Evento</th><th>Data</th><th>Tipo</th><th>Cinegrafista</th><th>Assistente</th><th>Solicitante</th><th>Status</th></tr></thead>
           <tbody id="hist-tb"></tbody>
         </table>
         <div id="hist-empty" class="es" style="display:none"><span class="ei">🕐</span><div class="et">Histórico vazio</div></div>
@@ -1859,6 +1859,7 @@ function renderDash(){
       <td style="color:var(--tx2);font-size:12px">${fd(p.data)}<br/>${p.hora||''}</td>
       <td>${p.status==='comitti'?'<span class="itag" style="background:rgba(139,92,246,.15);color:#a78bfa">Comitti</span>':tbadge(p.tipo)}</td>
       <td>${p.cineg?pcell(p.cineg,CINEG):'<span style="color:var(--tx3);font-size:11px">${p.status==="comitti"?"—":"A definir"}</span>'}</td>
+      <td>${p.assist?pcell(p.assist,ASSIST):'<span style="color:var(--tx3);font-size:11px">—</span>'}</td>
       <td>${sbadge(p.status)}</td>
     </tr>`).join('');
 }
@@ -2501,6 +2502,7 @@ function renderHist(){
       <td style="font-size:12px;color:var(--tx2)">${fd(p.data)}${p.hora?'<br><span style="color:var(--tx3)">'+p.hora+'</span>':''}</td>
       <td>${p.status==='comitti'?'<span class="itag" style="background:rgba(139,92,246,.15);color:#a78bfa">Comitti</span>':tbadge(p.tipo)}</td>
       <td>${p.cineg?pcell(p.cineg,CINEG):'<span style="color:var(--tx3)">—</span>'}</td>
+      <td>${p.assist?pcell(p.assist,ASSIST):'<span style="color:var(--tx3)">—</span>'}</td>
       <td><div style="font-size:12px">${p.solNome||'—'}</div><div style="font-size:11px;color:var(--tx3)">${p.nucleo||''}</div></td>
       <td>${sbadge(p.status)}</td>
     </tr>`).join('');
