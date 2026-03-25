@@ -273,6 +273,10 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       Relatórios
     </button>
+    <button class="ni admin-only" onclick="goView('admins',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/><path d="M16 11l2 2 4-4"/></svg>
+      Administradores
+    </button>
     <button class="ni" onclick="goView('hist',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       Histórico
@@ -434,6 +438,30 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
           <tbody id="prec-tb"></tbody>
         </table>
         <div id="prec-empty" class="es" style="display:none"><span class="ei">💰</span><div class="et">Tabela vazia</div><div>Adicione preços para calcular custos de terceirização automaticamente</div></div>
+      </div>
+    </div>
+
+    <!-- ADMINISTRADORES -->
+    <div class="view" id="view-admins">
+      <div class="sh">
+        <div class="stitle">Administradores</div>
+      </div>
+      <div style="font-size:13px;color:var(--tx2);margin-bottom:16px">Emails com acesso de administrador ao LiveSuite. Apenas @livemode.com é aceito.</div>
+      <div class="tw" style="margin-bottom:16px">
+        <table>
+          <thead><tr><th>Email</th><th>Ações</th></tr></thead>
+          <tbody id="admins-tb"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <div class="fgrp" style="flex:1">
+          <label class="fl">Adicionar administrador</label>
+          <input type="email" class="fc2" id="admin-email-inp" placeholder="email@livemode.com" onkeydown="if(event.key==='Enter')addAdmin()"/>
+        </div>
+        <button class="btn bp" onclick="addAdmin()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar
+        </button>
       </div>
     </div>
 
@@ -1148,7 +1176,7 @@ const ADMINS=['demo-admin','sergio'];
 // ══════════════════════════════════════════════════
 let S={
   user:null, role:'colab',
-  pedidos:[], precos:[],
+  pedidos:[], precos:[], admins:[],
   selTipo:null, editId:null, atribId:null, editPrecoId:null,
   filter:'todos', waGames:[], _pendingEmail:null
 };
@@ -1463,6 +1491,7 @@ async function deletePrecoFromSheet(id){
 const _saveLocal=function(){
   localStorage.setItem('cd4',JSON.stringify({
     v:2,pedidos:S.pedidos,precos:S.precos,
+    admins:S.admins,
     cineg:CINEG,assist:ASSIST,
     user:S.user,role:S.role
   }));
@@ -1493,6 +1522,7 @@ function load(){
     const d=JSON.parse(r);
     S.pedidos=d.pedidos||[];
     S.precos=d.precos||[];
+    S.admins=d.admins||[];
     S.user=d.user||null;
     S.role=d.role||'colab';
     // Se tiver cineg/assist salvos no localStorage, usa como fonte de verdade
@@ -1646,7 +1676,8 @@ function googleLogin(resp){
     return;
   }
   document.getElementById('login-error').style.display='none';
-  const admins=['clizardo@livemode.com','mbillat@livemode.com','sstamm@livemode.com','jcrispim@livemode.com','isouza@livemode.com','faugusto@livemode.com'];
+  const defaultAdmins=['clizardo@livemode.com','mbillat@livemode.com','sstamm@livemode.com','jcrispim@livemode.com','isouza@livemode.com','faugusto@livemode.com','oaraujo@livemode.com'];
+  const admins=S.admins&&S.admins.length?S.admins:defaultAdmins;
   S.user={name:p.name,email:p.email,ini:p.name.split(' ').map(n=>n[0]).slice(0,2).join('')};
   S.role=admins.includes(p.email)?'admin':'colab';
   save(); doLogin();
@@ -1702,14 +1733,14 @@ function goView(v,btn){
   document.getElementById('view-'+v).classList.add('act');
   if(btn) btn.classList.add('act');
   else {const el=document.querySelector(`.ni[onclick*="'${v}'"]`); if(el) el.classList.add('act');}
-  const titles={dash:'Dashboard',pedidos:'Pedidos de Cobertura',equipe:'Equipe',precos:'Tabela de Preços',hist:'Histórico'};
+  const titles={dash:'Dashboard',pedidos:'Pedidos de Cobertura',equipe:'Equipe',precos:'Tabela de Preços',hist:'Histórico',admins:'Administradores'};
   document.getElementById('pg-title').textContent=titles[v]||v;
   if(v==='pedidos') renderPed();
   if(v==='equipe') renderEquipe();
   if(v==='hist') renderHist();
   if(v==='relat') renderRelat();
   if(v==='custos') renderCustos();
-  if(v==='precos') renderPrecos();
+  if(v==='admins') renderAdmins();
 }
 
 // ══════════════════════════════════════════════════
@@ -2045,6 +2076,49 @@ function saveCineg(){
       saveCinegToSheet(saved);
     }
   }
+}
+
+const DEFAULT_ADMINS=['clizardo@livemode.com','mbillat@livemode.com','sstamm@livemode.com','jcrispim@livemode.com','isouza@livemode.com','faugusto@livemode.com','oaraujo@livemode.com'];
+
+function getAdmins(){
+  return S.admins&&S.admins.length?S.admins:[...DEFAULT_ADMINS];
+}
+
+function renderAdmins(){
+  const admins=getAdmins();
+  const tb=document.getElementById('admins-tb');
+  tb.innerHTML=admins.map(email=>`
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000">${email.substring(0,2).toUpperCase()}</div>
+          <span>${email}</span>
+          ${email===S.user?.email?'<span style="background:rgba(0,230,58,.1);color:var(--ac);border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">Você</span>':''}
+        </div>
+      </td>
+      <td>
+        ${email!==S.user?.email?`<button class="ib" onclick="removeAdmin('${email}')" style="color:var(--rd);border-color:rgba(239,68,68,.3)" title="Remover">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+        </button>`:'<span style="color:var(--tx3);font-size:11px">—</span>'}
+      </td>
+    </tr>`).join('');
+}
+
+function addAdmin(){
+  const email=document.getElementById('admin-email-inp').value.trim().toLowerCase();
+  if(!email){toast('Informe o email','w');return;}
+  if(!email.endsWith('@livemode.com')){toast('Apenas emails @livemode.com','w');return;}
+  const admins=getAdmins();
+  if(admins.includes(email)){toast('Email já é admin','w');return;}
+  S.admins=[...admins, email];
+  save(); document.getElementById('admin-email-inp').value='';
+  renderAdmins(); toast(email+' adicionado como admin ✓');
+}
+
+function removeAdmin(email){
+  const admins=getAdmins();
+  S.admins=admins.filter(a=>a!==email);
+  save(); renderAdmins(); toast(email+' removido dos admins');
 }
 
 function renderPrecos(){
