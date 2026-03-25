@@ -1061,7 +1061,10 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
     </div>
     <div class="mf">
       <button class="btn bg" onclick="closeM('m-wa')">Cancelar</button>
-      <button class="btn bp" id="btn-wa" style="display:none" onclick="importWa()">Adicionar à fila</button>
+      <button class="btn bp" id="btn-wa" style="display:none" onclick="importWa()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Enviar ao Comitti + Criar pedidos
+      </button>
     </div>
   </div>
 </div>
@@ -3186,26 +3189,12 @@ function importWa(){
   const sol=document.getElementById('wa-sol').value.trim()||S.user?.name||'—';
   const nuc=document.getElementById('wa-nuc').value.trim();
 
-  // Import Comitti games
   const selComitti=S.waGames.filter((_,i)=>document.getElementById('wg-'+i)?.classList.contains('sel'));
-
-  // Import LiveU/TVU as pedidos
   const selLiveU=(S.waLiveU||[]).filter((_,i)=>document.getElementById('wgl-'+i)?.classList.contains('sel'));
 
   if(!selComitti.length&&!selLiveU.length){toast('Selecione pelo menos um jogo','w');return;}
 
-  // Add Comitti games to queue
-  selComitti.forEach(g=>{
-    S.pedidos.push({
-      id:Date.now()+Math.random(), solNome:sol, nucleo:nuc,
-      solEmail:S.user?.email||'',
-      data:g.date, hora:g.hora, comp:g.comp||'', casa:g.casa, visit:g.visit, tipo:'',
-      prodNome:'', prodCont:'', repNome:'', repCont:'', obs:'',
-      status:'comitti', cineg:'', assist:'', chegada:'', ts:Date.now()
-    });
-  });
-
-  // Create pedidos for LiveU/TVU games
+  // Criar pedidos para LiveU/TVU
   selLiveU.forEach(g=>{
     const obj={
       id:Date.now()+Math.random(), solNome:sol, nucleo:nuc,
@@ -3219,13 +3208,56 @@ function importWa(){
     syncPedidoToSheet(obj);
   });
 
-  save(); closeM('m-wa'); renderAll(); renderPed();
-  const msgs=[];
-  if(selComitti.length) msgs.push(`${selComitti.length} jogo(s) adicionados à fila do Comitti`);
-  if(selLiveU.length) msgs.push(`${selLiveU.length} pedido(s) LiveU/TVU criados`);
-  toast(msgs.join(' + ')+'!');
-  // Se tem jogos do Comitti, abre o modal para enviar email
-  if(selComitti.length) setTimeout(()=>openEnviar(), 400);
+  save(); renderAll(); renderPed();
+
+  // Enviar email ao Comitti se tiver jogos Comitti selecionados
+  if(selComitti.length){
+    // Adiciona à fila do Comitti
+    selComitti.forEach(g=>{
+      S.pedidos.push({
+        id:Date.now()+Math.random(), solNome:sol, nucleo:nuc,
+        solEmail:S.user?.email||'',
+        data:g.date, hora:g.hora, comp:g.comp||'', casa:g.casa, visit:g.visit, tipo:'',
+        prodNome:'', prodCont:'', repNome:'', repCont:'', obs:'',
+        status:'comitti', cineg:'', assist:'', chegada:'', ts:Date.now()
+      });
+    });
+    save();
+
+    // Monta e envia email direto
+    const lines=selComitti.map((g,i)=>{
+      const parts=[`${i+1}. ${fd(g.date)}${g.hora?' - '+g.hora:''} | ${g.casa} x ${g.visit}`];
+      if(g.comp) parts.push(`   Competição: ${g.comp}`);
+      return parts.join('\n');
+    }).join('\n\n');
+
+    const subject=`Pedidos de Cobertura — ${new Date().toLocaleDateString('pt-BR')}`;
+    const body=`Olá, Marcelo!\n\nSeguem os pedidos de cobertura:\n\n${lines}\n\n${'─'.repeat(44)}\nQualquer dúvida, entre em contato.\n\nLiveSuite — Gestão de Coberturas`;
+    const para='marcelo@8mmbrasil.com.br';
+    const cc=buildCcList([S.user?.email||'']).join(', ');
+
+    closeM('m-wa');
+
+    withGmailToken(()=>{
+      toast('Enviando email ao Comitti...','i');
+      sendGmail({to:para, cc, subject, body,
+        onSuccess:()=>{
+          // Marca pedidos comitti como enviados
+          S.pedidos.filter(p=>p.status==='comitti').forEach(p=>p.status='comitti');
+          save(); renderAll(); renderPed();
+          const msgs=[];
+          if(selComitti.length) msgs.push(`Email enviado ao Comitti (${selComitti.length} jogos)`);
+          if(selLiveU.length) msgs.push(`${selLiveU.length} pedido(s) LiveU/TVU criados para os admins`);
+          toast(msgs.join(' + ')+'! ✓');
+        }
+      });
+    });
+  } else {
+    closeM('m-wa');
+    const msgs=[];
+    if(selLiveU.length) msgs.push(`${selLiveU.length} pedido(s) LiveU/TVU criados para os admins`);
+    toast(msgs.join(' + ')+'! ✓');
+  }
 }
 
 // ══════════════════════════════════════════════════
