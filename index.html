@@ -2694,7 +2694,7 @@ function setStatus(id,s){
 // ══════════════════════════════════════════════════
 function openAtrib(id){
   if(S.role!=='admin'){toast('Apenas admins podem atribuir cinegrafistas','w');return;}
-  const p=S.pedidos.find(x=>x.id===id); if(!p) return;
+  const p=S.pedidos.find(x=>String(x.id)===String(id)); if(!p) return;
   S.atribId=id;
 
   document.getElementById('atrib-sub').textContent=`${p.casa} x ${p.visit} — ${fd(p.data)} ${p.hora}`;
@@ -2765,7 +2765,7 @@ function openAtrib(id){
 }
 
 function calcChegadaAtrib(){
-  const p=S.pedidos.find(x=>x.id===S.atribId); if(!p||!p.hora) return;
+  const p=S.pedidos.find(x=>String(x.id)===String(S.atribId)); if(!p||!p.hora) return;
   const arr=calcArrival(p.hora);
   if(arr){
     document.getElementById('arrival-time').textContent=arr;
@@ -2822,7 +2822,7 @@ function calcTerc(){
 function confirmarAtrib(){
   const cineg=document.getElementById('a-cineg').value;
   if(!cineg){toast('Selecione o cinegrafista','w');return;}
-  const p=S.pedidos.find(x=>x.id===S.atribId); if(!p) return;
+  const p=S.pedidos.find(x=>String(x.id)===String(S.atribId)); if(!p) return;
   const arr=calcArrival(p.hora);
   const c=gc(cineg); const a=ga(document.getElementById('a-assist').value);
 
@@ -3198,7 +3198,7 @@ function importWa(){
   // Criar pedidos para LiveU/TVU
   selLiveU.forEach(g=>{
     const obj={
-      id:Date.now()+Math.random(), solNome:sol, nucleo:nuc,
+      id:String(Date.now())+'_'+String(Math.floor(Math.random()*10000)), solNome:sol, nucleo:nuc,
       solEmail:S.user?.email||'',
       data:g.date, hora:g.hora, comp:g.comp||'', casa:g.casa, visit:g.visit,
       tipo:g.tipo, local:'brasil',
