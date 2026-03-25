@@ -1285,7 +1285,7 @@ async function syncFromSheet(){
     await syncEquipeFromSheet();
     save();
     renderAll(); renderPed(); renderPrecos(); renderEquipe();
-    toast('Sincronizado ✓');
+    toast('Sincronizado ✓ — '+pedidos.length+' pedidos carregados');
   }catch(e){
     console.error('syncFromSheet:',e);
     toast('Erro ao sincronizar','w');
@@ -1832,24 +1832,25 @@ function updateBadge(){
 function renderDash(){
   updateStats(); updateBadge();
   const novos=S.pedidos.filter(p=>p.status==='novo').length;
+  const comittis=S.pedidos.filter(p=>p.status==='comitti').length;
   const bn=document.getElementById('banner-novos');
   if(S.role==='admin'&&novos>0){
     bn.style.display='flex';
-    document.getElementById('banner-novos-t').textContent=`${novos} pedido(s) aguardando atribuição`;
+    document.getElementById('banner-novos-t').textContent=`${novos} pedido(s) aguardando atribuição${comittis?` · ${comittis} para o Comitti`:''}`;
   } else bn.style.display='none';
 
   const items=[...S.pedidos]
     .filter(p=>p.status!=='conc'&&p.status!=='cancelado')
-    .sort((a,b)=>a.data>b.data?1:-1).slice(0,10);
+    .sort((a,b)=>a.data>b.data?1:-1).slice(0,20);
   const tb=document.getElementById('dash-tb'), em=document.getElementById('dash-empty');
   if(!items.length){tb.innerHTML='';em.style.display='block';return;}
   em.style.display='none';
   tb.innerHTML=items.map(p=>`
-    <tr class="${p.status==='novo'?'qr':p.status==='terc'?'tr3':''}" onclick="openAtrib(${p.id})">
+    <tr class="${p.status==='novo'?'qr':p.status==='terc'?'tr3':''}" onclick="${p.status==='comitti'?'openEnviar()':'openAtrib(\''+p.id+'\')'}">
       <td><div style="font-weight:500">${p.casa} x ${p.visit}</div><div style="font-size:11px;color:var(--tx3)">${p.comp||''}</div></td>
       <td style="color:var(--tx2);font-size:12px">${fd(p.data)}<br/>${p.hora||''}</td>
-      <td>${tbadge(p.tipo)}</td>
-      <td>${p.cineg?pcell(p.cineg,CINEG):'<span style="color:var(--tx3);font-size:11px">A definir</span>'}</td>
+      <td>${p.status==='comitti'?'<span class="itag" style="background:rgba(139,92,246,.15);color:#a78bfa">Comitti</span>':tbadge(p.tipo)}</td>
+      <td>${p.cineg?pcell(p.cineg,CINEG):'<span style="color:var(--tx3);font-size:11px">${p.status==="comitti"?"—":"A definir"}</span>'}</td>
       <td>${sbadge(p.status)}</td>
     </tr>`).join('');
 }
@@ -2480,8 +2481,8 @@ function exportRelat(){
 
 function renderHist(){
   const busca=(document.getElementById('hist-busca')?.value||'').toLowerCase();
-  let items=S.pedidos.filter(p=>['conc','cancelado','terc','comitti'].includes(p.status));
-  if(busca) items=items.filter(p=>(p.casa+p.visit+p.comp+p.solNome+p.nucleo).toLowerCase().includes(busca));
+  let items=S.pedidos.slice();
+  if(busca) items=items.filter(p=>(p.casa+' '+p.visit+' '+p.comp+' '+p.solNome+' '+p.nucleo).toLowerCase().includes(busca));
   items=items.sort((a,b)=>a.data<b.data?1:-1);
   const tb=document.getElementById('hist-tb'), em=document.getElementById('hist-empty');
   if(!items.length){tb.innerHTML='';em.style.display='block';return;}
@@ -2630,6 +2631,7 @@ function saveP(more){
     const idx=S.pedidos.findIndex(p=>p.id===S.editId);
     obj.status=S.pedidos[idx].status; obj.cineg=S.pedidos[idx].cineg; obj.assist=S.pedidos[idx].assist;
     S.pedidos[idx]=obj; closeM('m-novo'); toast('Pedido atualizado!');
+    withGmailToken(()=>syncPedidoToSheet(obj));
   } else {
     S.pedidos.push(obj);
     const n=S.pedidos.filter(p=>p.status==='novo').length;
@@ -2691,7 +2693,7 @@ function delSelected(){
 function setStatus(id,s){
   const p=S.pedidos.find(x=>String(x.id)===String(id)); if(p) p.status=s; save(); renderAll(); renderPed();
   toast({conf:'Confirmado!',conc:'Concluído!',terc:'Terceirizado!'}[s]||'Status atualizado');
-  if(p) syncPedidoToSheet(p);
+  if(p) withGmailToken(()=>syncPedidoToSheet(p));
 }
 
 // ══════════════════════════════════════════════════
@@ -2911,7 +2913,7 @@ function confirmarTerc(){
   p.tercDur=document.getElementById('t-dur').value;
   p.tercQtd=document.getElementById('t-qtd').value;
   save(); closeM('m-atrib'); renderAll(); renderPed();
-  syncPedidoToSheet(p);
+  withGmailToken(()=>syncPedidoToSheet(p));
   const body=document.getElementById('ec-prev').textContent;
   const subject=`[LiveSuite] Custo de terceirização — ${p.casa} x ${p.visit}`;
   const ccTerc=buildCcList([]).filter(v=>v!==p.solEmail).join(',');
