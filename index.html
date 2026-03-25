@@ -1841,7 +1841,7 @@ function renderDash(){
 
   const items=[...S.pedidos]
     .filter(p=>p.status!=='conc'&&p.status!=='cancelado')
-    .sort((a,b)=>a.data>b.data?1:-1).slice(0,20);
+    .sort((a,b)=>a.data>b.data?1:-1).slice(0,50);
   const tb=document.getElementById('dash-tb'), em=document.getElementById('dash-empty');
   if(!items.length){tb.innerHTML='';em.style.display='block';return;}
   em.style.display='none';
@@ -3621,3 +3621,4 @@ function delSetupP(id){
 </script>
 </body>
 </html>
+                                                                      
