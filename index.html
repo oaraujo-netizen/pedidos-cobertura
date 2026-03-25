@@ -2685,20 +2685,31 @@ function saveP(more){
   save(); renderAll(); renderPed();
 }
 
-function delP(id){
+async function delP(id){
   const p=S.pedidos.find(x=>String(x.id)===String(id));
-  S.pedidos=S.pedidos.filter(p=>String(p.id)!==String(id));
-  save(); renderAll(); renderPed(); toast('Pedido removido');
-  if(p) withGmailToken(()=>syncPedidoToSheet(p, true));
+  S.pedidos=S.pedidos.filter(x=>String(x.id)!==String(id));
+  save(); renderAll(); renderPed(); toast('Removendo pedido...','i');
+  if(p){
+    try{
+      await deletePedidoFromSheet(String(p.id));
+      toast('Pedido removido ✓');
+    }catch(e){
+      console.error('Erro ao deletar do Sheets:',e);
+      toast('Removido localmente (erro no Sheets)','w');
+    }
+  }
 }
 
-function delSelected(){
+async function delSelected(){
   const ids=[...document.querySelectorAll('.row-chk:checked')].map(c=>String(c.dataset.id));
   if(!ids.length) return;
   const toDelete=S.pedidos.filter(p=>ids.includes(String(p.id)));
   S.pedidos=S.pedidos.filter(p=>!ids.includes(String(p.id)));
-  save(); clearSel(); renderAll(); renderPed(); toast(`${ids.length} pedido(s) removidos`);
-  withGmailToken(()=>toDelete.forEach(p=>syncPedidoToSheet(p, true)));
+  save(); clearSel(); renderAll(); renderPed(); toast('Removendo pedidos...','i');
+  try{
+    for(const p of toDelete) await deletePedidoFromSheet(String(p.id));
+    toast(`${toDelete.length} pedido(s) removidos ✓`);
+  }catch(e){console.error('Erro ao deletar:',e); toast('Erro ao remover do Sheets','w');}
 }
 
 function setStatus(id,s){
