@@ -1651,16 +1651,15 @@ function sendGmail({to,cc,subject,body,attachments,onSuccess}){
       ].filter(Boolean).join('\r\n');
     } else {
       const bodyB64=toBase64(body);
-      raw=[
+      const headers=[
         'To: '+to,
-        cc?'Cc: '+cc:'',
+        cc?'Cc: '+cc:null,
         'Subject: =?UTF-8?B?'+subB64+'?=',
         'MIME-Version: 1.0',
         'Content-Type: text/plain; charset=UTF-8',
         'Content-Transfer-Encoding: base64',
-        '',
-        bodyB64
-      ].filter(Boolean).join('\r\n');
+      ].filter(Boolean);
+      raw=headers.join('\r\n')+'\r\n\r\n'+bodyB64;
     }
 
     fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
@@ -3226,26 +3225,22 @@ function importWa(){
     });
     save();
 
-    // Monta e envia email direto
-    const lines=selComitti.map((g,i)=>{
+    // Captura todos os dados ANTES de fechar o modal
+    const emailPara='marcelo@8mmbrasil.com.br';
+    const emailCc=buildCcList([S.user?.email||'']).join(', ');
+    const emailSubject=`Pedidos de Cobertura — ${new Date().toLocaleDateString('pt-BR')}`;
+    const emailLines=selComitti.map((g,i)=>{
       const parts=[`${i+1}. ${fd(g.date)}${g.hora?' - '+g.hora:''} | ${g.casa} x ${g.visit}`];
       if(g.comp) parts.push(`   Competição: ${g.comp}`);
       return parts.join('\n');
     }).join('\n\n');
-
-    const bodyLines=['Olá, Marcelo!','','Seguem os pedidos de cobertura:','',lines,'','─'.repeat(44),'Qualquer dúvida, entre em contato.','','LiveSuite — Gestão de Coberturas'];
-    const bodyText=bodyLines.filter(l=>l!==undefined&&l!==null).join('\n');
-    const subject=`Pedidos de Cobertura — ${new Date().toLocaleDateString('pt-BR')}`;
-    const para='marcelo@8mmbrasil.com.br';
-    const cc=buildCcList([S.user?.email||'']).join(', ');
-    console.log('Comitti email body:', bodyText.substring(0,200));
-    console.log('lines:', lines);
+    const emailBody='Olá, Marcelo!\n\nSeguem os pedidos de cobertura:\n\n'+emailLines+'\n\n'+'─'.repeat(44)+'\nQualquer dúvida, entre em contato.\n\nLiveSuite — Gestão de Coberturas';
 
     closeM('m-wa');
 
     withGmailToken(()=>{
       toast('Enviando email ao Comitti...','i');
-      sendGmail({to:para, cc, subject, body:bodyText,
+      sendGmail({to:emailPara, cc:emailCc, subject:emailSubject, body:emailBody,
         onSuccess:()=>{
           // Marca pedidos comitti como enviados
           S.pedidos.filter(p=>p.status==='comitti').forEach(p=>p.status='comitti');
