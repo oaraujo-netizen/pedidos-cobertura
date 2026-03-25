@@ -471,7 +471,10 @@ tbody tr:nth-child(1){animation-delay:0ms}tbody tr:nth-child(2){animation-delay:
 
     <!-- HISTÓRICO -->
     <div class="view" id="view-hist">
-      <div class="sh"><div class="stitle">Histórico</div></div>
+      <div class="sh">
+        <div class="stitle">Histórico</div>
+        <input type="text" class="fc2" id="hist-busca" placeholder="Buscar evento, solicitante..." oninput="renderHist()" style="width:220px"/>
+      </div>
       <div class="tw">
         <table>
           <thead><tr><th>Evento</th><th>Data</th><th>Tipo</th><th>Cinegrafista</th><th>Solicitante</th><th>Status</th></tr></thead>
@@ -2476,15 +2479,18 @@ function exportRelat(){
 }
 
 function renderHist(){
-  const items=S.pedidos.filter(p=>['conc','cancelado','terc','comitti'].includes(p.status)).sort((a,b)=>a.data<b.data?1:-1);
+  const busca=(document.getElementById('hist-busca')?.value||'').toLowerCase();
+  let items=S.pedidos.filter(p=>['conc','cancelado','terc','comitti'].includes(p.status));
+  if(busca) items=items.filter(p=>(p.casa+p.visit+p.comp+p.solNome+p.nucleo).toLowerCase().includes(busca));
+  items=items.sort((a,b)=>a.data<b.data?1:-1);
   const tb=document.getElementById('hist-tb'), em=document.getElementById('hist-empty');
   if(!items.length){tb.innerHTML='';em.style.display='block';return;}
   em.style.display='none';
   tb.innerHTML=items.map(p=>`
     <tr>
       <td><div style="font-weight:500">${p.casa} x ${p.visit}</div><div style="font-size:11px;color:var(--tx3)">${p.comp||''}</div></td>
-      <td style="font-size:12px;color:var(--tx2)">${fd(p.data)}</td>
-      <td>${tbadge(p.tipo)}</td>
+      <td style="font-size:12px;color:var(--tx2)">${fd(p.data)}${p.hora?'<br><span style="color:var(--tx3)">'+p.hora+'</span>':''}</td>
+      <td>${p.status==='comitti'?'<span class="itag" style="background:rgba(139,92,246,.15);color:#a78bfa">Comitti</span>':tbadge(p.tipo)}</td>
       <td>${p.cineg?pcell(p.cineg,CINEG):'<span style="color:var(--tx3)">—</span>'}</td>
       <td><div style="font-size:12px">${p.solNome||'—'}</div><div style="font-size:11px;color:var(--tx3)">${p.nucleo||''}</div></td>
       <td>${sbadge(p.status)}</td>
